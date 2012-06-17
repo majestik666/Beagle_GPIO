@@ -142,7 +142,9 @@ public:
 	Beagle_GPIO_Status writePin( unsigned short _pin, unsigned char _value );
 	// Read a value from a pin
 	unsigned char readPin( unsigned short _pin, Beagle_GPIO_Status & status );
- 
+	// Is this Module active ?
+	bool isActive() { return m_active; }
+
 private:
 	bool			m_active;
 	int			m_gpio_fd;

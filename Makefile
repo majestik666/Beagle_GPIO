@@ -6,24 +6,33 @@ CXX=g++
 
 CFLAGS=-Wall -c
 
-LDFLAGS=
+LDFLAGS=-Wall
 
-all: Beagle_GPIO.o Beagle_GPIO_test
+TARGETS = Beagle_GPIO.o	\
+	  Beagle_GPIO_test \
+	  Beagle_GPIO_HD44780.o \
+	  Beagle_GPIO_HD44780_test
+
+all: $(TARGETS)
 
 Beagle_GPIO.o: Beagle_GPIO.cc
 	@echo Compiling $< to $@
 	@$(CXX) $(CFLAGS) Beagle_GPIO.cc
 
-Beagle_GPIO_test.o: Beagle_GPIO_test.cc
+Beagle_GPIO_HD44780.o: Beagle_GPIO_HD44780.cc
 	@echo Compiling $< to $@
-	@$(CXX) $(CFLAGS) Beagle_GPIO_test.cc
+	@$(CXX) $(CFLAGS) Beagle_GPIO_HD44780.cc
 
-Beagle_GPIO_test: Beagle_GPIO.o Beagle_GPIO_test.o
-	@echo Linking $@
-	@$(CXX) Beagle_GPIO.o Beagle_GPIO_test.o -o Beagle_GPIO_test
+Beagle_GPIO_test: Beagle_GPIO_test.cc Beagle_GPIO.o
+	@echo Compiling $< to $@
+	@$(CXX) $(LDLAGS) Beagle_GPIO_test.cc Beagle_GPIO.o -o Beagle_GPIO_test
+
+Beagle_GPIO_HD44780_test: Beagle_GPIO_HD44780_test.cc Beagle_GPIO.o Beagle_GPIO_HD44780.o
+	@echo Compiling $< to $@
+	@$(CXX) $(LDLAGS) Beagle_GPIO_HD44780_test.cc Beagle_GPIO.o Beagle_GPIO_HD44780.o -o Beagle_GPIO_HD44780_test
 
 clean:
-	@rm -rf *~ *.o Beagle_GPIO_test
+	@rm -rf *~ *.o $(TARGETS) 
 
 
 ######################################
