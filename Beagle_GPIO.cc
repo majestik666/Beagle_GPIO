@@ -29,24 +29,24 @@
 const int Beagle_GPIO::GPIO_Pin_Bank[] = 
 {
 	-1, -1,  1,  1,  1,	// P8_1  -> P8_5
-	 1, -1, -1, -1, -1,	// P8_6  -> P8_10
-	 1,  1, -1,  0,  1, 	// P8_11 -> P8_15
-	 1,  0,  2, -1,  1, 	// P8_16 -> P8_20
+	 1,  2,  2,  2,  2,	// P8_6  -> P8_10
+	 1,  1,  0,  0,  1, 	// P8_11 -> P8_15
+	 1,  0,  2,  0,  1, 	// P8_16 -> P8_20
 	 1,  1,  1,  1,  1, 	// P8_21 -> P8_25
 	 1,  2,  2,  2,  2, 	// P8_26 -> P8_30
-	-1, -1, -1, -1, -1, 	// P8_31 -> P9_35
-	-1, -1, -1,  2,  2, 	// P8_36 -> P8_40
+	 0,  0,  0,  2,  0, 	// P8_31 -> P9_35
+	 2,  2,  2,  2,  2, 	// P8_36 -> P8_40
 	 2,  2,  2,  2,  2, 	// P8_41 -> P8_45
 	 2,			// P8_46
 	-1, -1, -1, -1, -1, 	// P9_1  -> P9_5
 	-1, -1, -1, -1, -1, 	// P9_6  -> P9_10
-	-1,  1, -1, -1,  1, 	// P9_11 -> P9_15
-	-1, -1, -1, -1, -1,	// P9_16 -> P9_20
-	-1, -1,  1, -1,  3, 	// P9_21 -> P9_25
-	-1,  3, -1, -1, -1, 	// P9_26 -> P9_30
-	-1, -1, -1, -1, -1, 	// P9_31 -> P9_35
+	 0,  1,  0,  1,  1, 	// P9_11 -> P9_15
+	 1,  0,  0,  0,  0,	// P9_16 -> P9_20
+	 0,  0,  1,  0,  3, 	// P9_21 -> P9_25
+	 0,  3,  3,  3,  3, 	// P9_26 -> P9_30
+	 3, -1, -1, -1, -1, 	// P9_31 -> P9_35
 	-1, -1, -1, -1, -1, 	// P9_36 -> P9_40
-	-1,  0, -1, -1, -1, 	// P9_41 -> P9_45
+	 0,  0, -1, -1, -1, 	// P9_41 -> P9_45
 	-1			// P9_46
 };
 
@@ -56,26 +56,59 @@ const int Beagle_GPIO::GPIO_Pin_Bank[] =
 const int Beagle_GPIO::GPIO_Pin_Id[] = 
 {
 	-1, -1,  6,  7,  2,	// P8_1  -> P8_5
-	 3, -1, -1, -1, -1,	// P8_6  -> P8_10
-	13, 12, -1, 26, 15, 	// P8_11 -> P8_15
-	14, 27,  1, -1, 31, 	// P8_16 -> P8_20
+	 3,  2,  3,  5,  4,	// P8_6  -> P8_10
+	13, 12, 23, 26, 15, 	// P8_11 -> P8_15
+	14, 27,  1, 22, 31, 	// P8_16 -> P8_20
 	30,  5,  4,  1,  0, 	// P8_21 -> P8_25
 	29, 22, 24, 23, 25, 	// P8_26 -> P8_30
-	-1, -1, -1, -1, -1, 	// P8_31 -> P9_35
-	-1, -1, -1, 12, 13, 	// P8_36 -> P8_40
+	10, 11,  9, 17,  8, 	// P8_31 -> P9_35
+	16, 14, 15, 12, 13, 	// P8_36 -> P8_40
 	10, 11,  8,  9,  6, 	// P8_41 -> P8_45
 	 7,			// P8_46
 	-1, -1, -1, -1, -1, 	// P9_1  -> P9_5
 	-1, -1, -1, -1, -1,	// P9_6  -> P9_10
-	-1, 28, -1, -1, 16, 	// P9_11 -> P9_15
-	-1, -1, -1, -1, -1, 	// P9_16 -> P9_20
-	-1, -1, 17, -1, 21, 	// P9_21 -> P9_25
-	-1, 19, -1, -1, -1, 	// P9_26 -> P9_30
-	-1, -1, -1, -1, -1, 	// P9_31 -> P9_35
+	30, 28, 31, 18, 16, 	// P9_11 -> P9_15
+	19,  5,  4, 13, 12, 	// P9_16 -> P9_20
+	 3,  2, 17, 15, 21, 	// P9_21 -> P9_25
+	14, 19, 17, 15, 16, 	// P9_26 -> P9_30
+	14, -1, -1, -1, -1, 	// P9_31 -> P9_35
 	-1, -1, -1, -1, -1, 	// P9_36 -> P9_40
-	-1,  7, -1, -1, -1, 	// P9_41 -> P9_45
+	20,  7, -1, -1, -1, 	// P9_41 -> P9_45
 	-1			// P9_46
 };
+
+//=======================================================
+//=======================================================
+
+// Pad Control Register
+const unsigned long GPIO_Pad_Control[]
+{
+	0x0000, 0x0000, 0x0818, 0x081C, 0x0808,	// P8_1  -> P8_5
+	0x080C, 0x0890, 0x0894, 0x089C, 0x0898,	// P8_6  -> P8_10
+	0x0834, 0x0830, 0x0824, 0x0828, 0x083C,	// P8_11 -> P8_15
+	0x0838, 0x082C, 0x088C, 0x0820, 0x0884,	// P8_16 -> P8_20
+	0x0880, 0x0814, 0x0810, 0x0804, 0x0800,	// P8_21 -> P8_25
+	0x087C, 0x08E0, 0x08E8, 0x08E4, 0x08EC,	// P8_26 -> P8_30
+	0x08D8, 0x08DC, 0x08D4, 0x08CC, 0x08D0,	// P8_31 -> P8_35
+	0x08C8, 0x08C0, 0x08C4, 0x08B8, 0x08BC,	// P8_36 -> P8_40
+	0x08B0, 0x08B4, 0x08A8, 0x08AC, 0x08A0,	// P8_41 -> P8_45
+	0x08A4,					// P8_46
+	0x0000, 0x0000, 0x0000, 0x0000, 0x0000,	// P9_1  -> P9_5
+	0x0000, 0x0000, 0x0000, 0x0000, 0x0000,	// P9_6  -> P9_10
+	0x0870, 0x0878, 0x0874, 0x0848, 0x0840,	// P9_11 -> P9_15
+	0x084C, 0x095C, 0x0958, 0x097C, 0x0978,	// P9_16 -> P9_20
+	0x0954, 0x0950, 0x0844, 0x0984, 0x09AC,	// P9_21 -> P9_25
+	0x0980, 0x09A4, 0x099C, 0x0994, 0x0998,	// P9_26 -> P9_30
+	0x0990, 0x0000, 0x0000, 0x0000, 0x0000,	// P9_31 -> P9_35
+	0x0000, 0x0000, 0x0000, 0x0000, 0x0000,	// P9_36 -> P9_40
+	0x09B4, 0x0964, 0x0000, 0x0000, 0x0000,	// P9_41 -> P9_45
+	0x0000					// P9_46
+};
+
+//=======================================================
+//=======================================================
+
+const unsigned long Beagle_GPIO::GPIO_Pin_Config = 0x48000000;
 
 //=======================================================
 //=======================================================
@@ -106,7 +139,15 @@ Beagle_GPIO::Beagle_GPIO()
 		GPIO_ERROR( "Cannot open /dev/mem" );
 		return;
 	}
-	
+
+	// Map Pin Config 
+	m_pinConf = (unsigned long *)mmap( NULL, 0x10000, PROT_READ | PROT_WRITE, MAP_SHARED, m_gpio_fd, GPIO_Pin_Config );
+	if ( m_pinConf == MAP_FAILED )
+	{
+		GPIO_ERROR( "Pin Config Mapping failed" );
+		return;
+	}
+
 	// Now mapping the GPIO registers
 	for ( int i=0; i<4; ++i)
 	{
@@ -117,6 +158,18 @@ Beagle_GPIO::Beagle_GPIO()
 			GPIO_ERROR( "GPIO Mapping failed for GPIO Module " << i );
 			return;
 		}
+
+		// Get some info about the GPIO Module
+		unsigned long major = (m_gpio[i][kREVISION] & 0x700) >> 8;
+		unsigned long minor = m_gpio[i][kREVISION] & 0x3F;
+		GPIO_PRINT( "Module Version " << major << "." << minor );
+
+		unsigned long idleMode = (m_gpio[i][kSYSCONFIG] & 0x18) >> 3;
+		unsigned long softReset = (m_gpio[i][kSYSCONFIG] & 0x02) >> 1;
+		unsigned long autoIdle = m_gpio[i][kSYSCONFIG] & 0x01;
+		GPIO_PRINT( "Idle Mode  = " << idleMode );
+		GPIO_PRINT( "Soft Reset = " << softReset );
+		GPIO_PRINT( "Auto Idle  = " << autoIdle );
 	}
 	
 	// Init complete and successfull
@@ -150,9 +203,17 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::configurePin( unsigned short _pin, 
 	unsigned long v = 0x1 << GPIO_Pin_Id[_pin];
 	
 	if ( _direction == kINPUT)
+	{
 		m_gpio[GPIO_Pin_Bank[_pin]][kOE/4] |= v;
+	}
 	else
+	{
 		m_gpio[GPIO_Pin_Bank[_pin]][kOE/4] &= ~v;
+		m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_0/4] |= v;
+		m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_1/4] |= v;
+
+		GPIO_PRINT( "OE = " << std::hex << m_gpio[GPIO_Pin_Bank[_pin]][kOE/4] );
+	}
 
 	return kSuccess;
 }

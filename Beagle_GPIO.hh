@@ -120,6 +120,12 @@ public:
 	// Pin Id for GPIOs
 	static const int GPIO_Pin_Id[];
 
+	// Pad Control Register
+	static const unsigned long GPIO_Pad_Control[];
+
+	// Base address of pin config
+	static const unsigned long GPIO_Pin_Config;
+
 	// Base addresses of GPIO Modules	
 	static const unsigned long GPIO_Base[];
 	
@@ -138,6 +144,7 @@ public:
 private:
 	bool			m_active;
 	int			m_gpio_fd;
+	unsigned long *		m_pinConf;
 	unsigned long * 	m_gpio[4];
 };
  
