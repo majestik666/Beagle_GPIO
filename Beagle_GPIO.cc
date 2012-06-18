@@ -277,4 +277,143 @@ unsigned char Beagle_GPIO::readPin( unsigned short _pin )
 //=======================================================
 //=======================================================
 
+// Default SPI Device for the beaglebone
+static const char *spi_device = "/dev/spidev2.0";
+
+// Open SPI Channel
+void Beagle_GPIO::openSPI( unsigned char _mode,
+			   unsigned char _bits,
+			   unsigned long _speed,
+	       		   unsigned short _delay )
+{
+	GPIO_PRINT( "Opening SPI Device" );
+	m_spi_fd = open( spi_device, O_RDWR );
+	if ( m_spi_fd < 0 )
+	{
+		GPIO_ERROR( "Error opening SPI Device" );
+		return;
+	}
+
+	int ret = 0;
+
+	// Save settings
+	m_spi_mode = _mode;
+	m_spi_bits = _bits;
+	m_spi_speed = _speed;
+	m_spi_delay = _delay;
+
+	m_spi_buffer_rx = new unsigned char[65536];
+
+	// SPI Mode
+	ret = ioctl(m_spi_fd, SPI_IOC_WR_MODE, &m_spi_mode);
+	if (ret == -1)
+	{
+		GPIO_ERROR( "Error setting SPI Mode");
+		return;
+	}
+
+	ret = ioctl(m_spi_fd, SPI_IOC_RD_MODE, &m_spi_mode);
+	if (ret == -1)
+	{
+		GPIO_ERROR( "Error getting SPI Mode");
+		return;
+	}
+
+	// SPI Bits Per Word
+	ret = ioctl(m_spi_fd, SPI_IOC_WR_BITS_PER_WORD, &m_spi_bits);
+	if (ret == -1)
+	{
+		GPIO_ERROR( "Error setting SPI Bits Per Word");
+		return;
+	}
+
+	ret = ioctl(m_spi_fd, SPI_IOC_RD_BITS_PER_WORD, &m_spi_bits);
+	if (ret == -1)
+	{
+		GPIO_ERROR( "Error getting SPI Bits Per Word");
+		return;
+	}
+
+	// SPI Max Speed
+	ret = ioctl(m_spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &m_spi_speed);
+	if (ret == -1)
+	{
+		GPIO_ERROR( "Error setting SPI Max Speed");
+		return;
+	}
+
+	ret = ioctl(m_spi_fd, SPI_IOC_RD_MAX_SPEED_HZ, &m_spi_speed);
+	if (ret == -1)
+	{
+		GPIO_ERROR( "Error getting SPI Max Speed");
+		return;
+	}
+
+	GPIO_PRINT( "SPI Mode : " << std::hex << (int)(m_spi_mode) );
+	GPIO_PRINT( "SPI Bits Per Word : " << std::dec << (int)(m_spi_bits) );
+	GPIO_PRINT( "SPI Max Speed : " << std::dec << m_spi_speed );
+	GPIO_PRINT( "SPI Delay : " << std::dec << m_spi_delay );
+	GPIO_PRINT( "SPI Opened" );
+
+	GPIO_PRINT( "SPI Testing...");
+	unsigned char b[4];
+	b[0] = 0xFF;
+	b[1] = 0xF1;
+	b[2] = 0xAA;
+	b[3] = 0x99;
+	sendSPIBuffer( (unsigned long)(b), 4 );
+}
  
+//=======================================================
+//=======================================================
+
+// Close SPI Channel
+void Beagle_GPIO::closeSPI()
+{
+	if ( m_spi_fd >= 0)
+	{
+		GPIO_PRINT( "Closing SPI Device" );
+		close( m_spi_fd );
+		delete [] m_spi_buffer_rx;
+	}
+}
+ 
+//=======================================================
+//=======================================================
+ 
+// Send SPI Buffer
+void Beagle_GPIO::sendSPIBuffer( unsigned long _buffer, int _size )
+{
+	assert( m_spi_fd >= 0 );
+	assert( _buffer > 0 );
+	assert( _size > 0 );
+
+	m_spi_ioc_tr.tx_buf = _buffer;
+       	m_spi_ioc_tr.rx_buf = (unsigned long)(m_spi_buffer_rx);
+  	m_spi_ioc_tr.len = _size;
+       	m_spi_ioc_tr.delay_usecs = m_spi_delay;
+       	m_spi_ioc_tr.speed_hz = m_spi_speed;
+       	m_spi_ioc_tr.bits_per_word = m_spi_bits;
+
+#if 0
+	unsigned char * c = (unsigned char *)(_buffer);
+	for (int i=0;i<_size;++i)
+		std::cout << "0x" << std::hex << (int)(c[i]) << " ";
+	std::cout << "\n";
+#endif	
+	if ( ioctl( m_spi_fd, SPI_IOC_MESSAGE(1), &m_spi_ioc_tr ) < 1 )
+	{
+		GPIO_ERROR( "Cannot send SPI Buffer, size=" << std::dec << _size );
+		return;
+	}
+#if 0
+	for (int i=0;i<_size;++i)
+		std::cout << "0x" << std::hex << (int)(m_spi_buffer_rx[i]) << " ";
+	std::cout << "\n";
+#endif
+}
+ 
+//=======================================================
+//=======================================================
+
+

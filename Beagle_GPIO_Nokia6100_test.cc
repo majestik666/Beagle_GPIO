@@ -12,9 +12,10 @@ int main()
 	GPIO_PRINT( "BeagleBone GPIO Nokia6100 Test" );
 	GPIO_PRINT( "==============================" );
 
+#if 0
+	// Regular pins interface
 	Beagle_GPIO_Nokia6100 lcd(
 			&gpio,
-			Beagle_GPIO::P8_46,	// BL
 			Beagle_GPIO::P8_45,	// CS
 			Beagle_GPIO::P8_44,	// SCLK
 			Beagle_GPIO::P8_43,	// SDATA
@@ -34,6 +35,21 @@ int main()
 	lcd.write( 33, 25, "Beagle_GPIO", 0xFF, 0xFF, 0xFF );
 	lcd.write( 35, 35, "Nokia 6100", 0xFF, 0xFF, 0xFF );
 	lcd.write( 57, 45, "LCD", 0xFF, 0xFF, 0xFF );
+#else
+	// SPI Interface
+	Beagle_GPIO_Nokia6100 lcd( & gpio, Beagle_GPIO::P8_42 );
+
+	lcd.initScreen();
+
+	for(int i=0;i<100;++i)
+	{
+		lcd.fillBox(0,0,132,132,0xFF,0,0);
+		//lcd.fillBox(0,0,132,132,0,0xFF,0);
+		//lcd.fillBox(0,0,132,132,0,0,0xFF);
+		lcd.write( 33, i, "Beagle_GPIO", 0xFF, 0xFF, 0xFF );
+	}
+#endif
+	sleep(1);
 
 	return 0;
 }

@@ -17,6 +17,9 @@
 //=======================================================
  
 #include <iostream>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
  
 //=======================================================
 //=======================================================
@@ -136,12 +139,28 @@ public:
 public:
 	// Configure pin as input/output
 	Beagle_GPIO_Status configurePin( unsigned short _pin, Beagle_GPIO_Direction _direction );
+
 	// Enable/Disable interrupts for the pin
 	Beagle_GPIO_Status enablePinInterrupts( unsigned short _pin, bool _enable );
+
 	// Write a value to a pin
 	Beagle_GPIO_Status writePin( unsigned short _pin, unsigned char _value );
+
 	// Read a value from a pin
 	unsigned char readPin( unsigned short _pin );
+
+	// Open SPI Channel
+	void openSPI( unsigned char _mode=0,
+		      unsigned char _bits=8,
+		      unsigned long _speed=4800000,
+		      unsigned short _delay=0 );
+
+	// Close SPI Channel
+	void closeSPI(); 
+
+	// Send SPI Buffer
+	void sendSPIBuffer( unsigned long buffer, int size );
+
 	// Is this Module active ?
 	bool isActive() { return m_active; }
 
@@ -150,6 +169,15 @@ private:
 	int			m_gpio_fd;
 	unsigned long *		m_controlModule;
 	unsigned long * 	m_gpio[4];
+
+	int			m_spi_fd;
+	unsigned char *		m_spi_buffer_rx;
+	unsigned char		m_spi_mode;
+	unsigned char 		m_spi_bits;
+	unsigned long 		m_spi_speed;
+	unsigned short 		m_spi_delay;
+	
+	struct spi_ioc_transfer m_spi_ioc_tr;
 };
  
 //=======================================================

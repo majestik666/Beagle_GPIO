@@ -127,7 +127,6 @@ const unsigned char Beagle_GPIO_Nokia6100::font_5x8[] =
 
 Beagle_GPIO_Nokia6100::Beagle_GPIO_Nokia6100(
 		Beagle_GPIO * gpio,
-		unsigned short _pin_BL,
 		unsigned short _pin_CS,
 		unsigned short _pin_SCLK,
 		unsigned short _pin_SDATA,
@@ -141,19 +140,18 @@ Beagle_GPIO_Nokia6100::Beagle_GPIO_Nokia6100(
 	}
 	m_gpio = gpio;
 
-	m_pin_BL    = _pin_BL;
+	m_use_SPI = 0;
+
 	m_pin_CS    = _pin_CS;
 	m_pin_SCLK  = _pin_SCLK;
 	m_pin_SDATA = _pin_SDATA;
 	m_pin_RESET = _pin_RESET;
 
 	// Initialize pins on the board
-	gpio->configurePin( m_pin_BL,    Beagle_GPIO::kOUTPUT );
 	gpio->configurePin( m_pin_CS,    Beagle_GPIO::kOUTPUT );
 	gpio->configurePin( m_pin_SCLK,  Beagle_GPIO::kOUTPUT );
 	gpio->configurePin( m_pin_SDATA, Beagle_GPIO::kOUTPUT );
 	gpio->configurePin( m_pin_RESET, Beagle_GPIO::kOUTPUT );
-	m_gpio->writePin( m_pin_BL,    0);
 	m_gpio->writePin( m_pin_CS,    1);
 	m_gpio->writePin( m_pin_SCLK,  0);
 	m_gpio->writePin( m_pin_SDATA, 0);
@@ -163,8 +161,43 @@ Beagle_GPIO_Nokia6100::Beagle_GPIO_Nokia6100(
 //=======================================================
 //=======================================================
 
+Beagle_GPIO_Nokia6100::Beagle_GPIO_Nokia6100(
+		Beagle_GPIO * gpio,
+		unsigned short _pin_RESET )
+{
+	if (!gpio || !gpio->isActive())
+	{
+		GPIO_ERROR( "Invalid or Inactive GPIO Module" );
+		m_gpio = NULL;
+		return;
+	}
+	m_gpio = gpio;
+
+	m_use_SPI = 1;
+	m_spi_buffer = new unsigned char[65536];
+
+	m_spi_buffer_index = 0;
+	// Mode 0, 9bits, 48000kHz, 0 delay
+	m_gpio->openSPI( 0, 9, 48000000, 0 );
+
+	m_pin_RESET = _pin_RESET;
+
+	// Initialize pins on the board
+	gpio->configurePin( m_pin_RESET, Beagle_GPIO::kOUTPUT );
+	m_gpio->writePin( m_pin_RESET, 1);
+}
+
+//=======================================================
+//=======================================================
+
 Beagle_GPIO_Nokia6100::~Beagle_GPIO_Nokia6100()
 {
+	if ( m_use_SPI )
+	{
+		m_gpio->closeSPI();
+		delete [] m_spi_buffer;
+		m_spi_buffer_index = 0;
+	}
 	GPIO_PRINT( "Closing LCD Screen" );
 	m_gpio = NULL;
 }
@@ -217,57 +250,117 @@ void Beagle_GPIO_Nokia6100::sendData( unsigned char _data )
 void Beagle_GPIO_Nokia6100::initScreen()
 {
 	GPIO_PRINT( "Initializing Nokia6100 Screen" );
-	
-	m_gpio->writePin( m_pin_CS, 1 );
-	m_gpio->writePin( m_pin_SDATA, 1 );
-	m_gpio->writePin( m_pin_SCLK, 1 );
 
-	// Perform a reset
-	m_gpio->writePin( m_pin_RESET, 1 );
-	usleep(10000);
-	m_gpio->writePin( m_pin_RESET, 0 );
-	usleep(10000);
-	m_gpio->writePin( m_pin_RESET, 1 );
-	usleep(10000);
+	if ( !m_use_SPI )
+	{	
+		// Regular non-SPI Init
+		m_gpio->writePin( m_pin_CS, 1 );
+		m_gpio->writePin( m_pin_SDATA, 1 );
+		m_gpio->writePin( m_pin_SCLK, 1 );
 
-	// Set CS 
-	m_gpio->writePin( m_pin_CS, 0 );
+		// Perform a reset
+		m_gpio->writePin( m_pin_RESET, 1 );
+		usleep(10000);
+		m_gpio->writePin( m_pin_RESET, 0 );
+		usleep(10000);
+		m_gpio->writePin( m_pin_RESET, 1 );
+		usleep(10000);
 
-	sendCommand( kDISCTL );
-	sendData( 0x0C );
-	sendData( 0x20 );
-	sendData( 0x00 );
-	sendData( 0x01 );
+		// Set CS 
+		m_gpio->writePin( m_pin_CS, 0 );
 
-	sendCommand( kCOMSCN );
-	sendData( 0x01 );
+		sendCommand( kDISCTL );
+		sendData( 0x0C );
+		sendData( 0x20 );
+		sendData( 0x00 );
+		sendData( 0x01 );
 
-	sendCommand( kOSCON );
-	sendCommand( kSLPOUT );
+		sendCommand( kCOMSCN );
+		sendData( 0x01 );
 
-	sendCommand( kPWRCTR );
-	sendData( 0x0F );
+		sendCommand( kOSCON );
+		sendCommand( kSLPOUT );
 
-	sendCommand( kDISINV );
+		sendCommand( kPWRCTR );
+		sendData( 0x0F );
 
-	sendCommand( kDATCTL );
-	sendData( 0x00 );
-	sendData( 0x00 );
-	sendData( 0x02 );
+		sendCommand( kDISINV );
 
-	sendCommand( kVOLCTR );
-	sendData( 0x10 );
-	sendData( 0x03 );
+		sendCommand( kDATCTL );
+		sendData( 0x00 );
+		sendData( 0x00 );
+		sendData( 0x02 );
 
-	sendCommand( kNOP );
+		sendCommand( kVOLCTR );
+		sendData( 0x10 );
+		sendData( 0x03 );
 
-	usleep(100000);
+		sendCommand( kNOP );
 
-	clearScreen();
+		usleep(100000);
 
-	sendCommand( kDISON );
+		clearScreen();
 
-	usleep(100000);
+		sendCommand( kDISON );
+
+		usleep(100000);
+	}
+	else
+	{	
+		// SPI Init
+		// Perform a reset
+		m_gpio->writePin( m_pin_RESET, 1 );
+		usleep(10000);
+		m_gpio->writePin( m_pin_RESET, 0 );
+		usleep(10000);
+		m_gpio->writePin( m_pin_RESET, 1 );
+		usleep(10000);
+
+		addSPICommand( kDISCTL );
+		addSPIData( 0x0C );
+		addSPIData( 0x20 );
+		addSPIData( 0x00 );
+		addSPIData( 0x01 );
+
+		addSPICommand( kDISCTL );
+		addSPIData( 0x0C );
+		addSPIData( 0x20 );
+		addSPIData( 0x00 );
+		addSPIData( 0x01 );
+
+		addSPICommand( kCOMSCN );
+		addSPIData( 0x01 );
+
+		addSPICommand( kOSCON );
+		addSPICommand( kSLPOUT );
+
+		addSPICommand( kPWRCTR );
+		addSPIData( 0x0F );
+
+		addSPICommand( kDISINV );
+
+		addSPICommand( kDATCTL );
+		addSPIData( 0x00 );
+		addSPIData( 0x00 );
+		addSPIData( 0x02 );
+
+		addSPICommand( kVOLCTR );
+		addSPIData( 0x10 );
+		addSPIData( 0x03 );
+
+		addSPICommand( kNOP );
+
+		sendSPIBuffer();
+
+		usleep(100000);
+
+		clearScreen();
+
+		addSPICommand( kDISON );
+		sendSPIBuffer();
+
+		usleep(100000);
+	}
 
 	GPIO_PRINT( "Nokia6100 Screen Initialized" );
 }
@@ -287,13 +380,28 @@ void Beagle_GPIO_Nokia6100::clearScreen()
 // Set window on display
 void Beagle_GPIO_Nokia6100::setWindow( unsigned char _x1, unsigned char _y1, unsigned char _x2, unsigned char _y2 )
 {
-	sendCommand( kPASET );
-	sendData( _y1 + 2 );
-	sendData( _y2 + 2 );
+	if ( !m_use_SPI)
+	{
+		sendCommand( kPASET );
+		sendData( _y1 + 2 );
+		sendData( _y2 + 2 );
 
-	sendCommand( kCASET );
-	sendData( _x1 );
-	sendData( _x2 );
+		sendCommand( kCASET );
+		sendData( _x1 );
+		sendData( _x2 );
+	}
+	else
+	{
+		addSPICommand( kPASET );
+		addSPIData( _y1 + 2 );
+		addSPIData( _y2 + 2 );
+
+		addSPICommand( kCASET );
+		addSPIData( _x1 );
+		addSPIData( _x2 );
+
+		sendSPIBuffer();
+	}
 }
 
 //=======================================================
@@ -304,13 +412,27 @@ void Beagle_GPIO_Nokia6100::setPixel( unsigned char _x, unsigned char _y, unsign
 {
 	setWindow( _x,_y,_x,_y);
 
-	sendCommand( kRAMWR );
-	unsigned char _c = (_r << 4) | (_g >> 4);
-	sendData( _c );
-	_c = (_b << 4) | (_r >> 4);
-	sendData( _c );
-	_c = (_g << 4) | (_b >> 4);
-	sendData( _c );
+	if ( !m_use_SPI )
+	{
+		sendCommand( kRAMWR );
+		unsigned char _c = (_r << 4) | (_g >> 4);
+		sendData( _c );
+		_c = (_b << 4) | (_r >> 4);
+		sendData( _c );
+		_c = (_g << 4) | (_b >> 4);
+		sendData( _c );
+	}
+	else
+	{
+		addSPICommand( kRAMWR );
+		unsigned char _c = (_r << 4) | (_g >> 4);
+		addSPIData( _c );
+		_c = (_b << 4) | (_r >> 4);
+		addSPIData( _c );
+		_c = (_g << 4) | (_b >> 4);
+		addSPIData( _c );
+		sendSPIBuffer();
+	}
 }
 
 //=======================================================
@@ -321,20 +443,36 @@ void Beagle_GPIO_Nokia6100::fillBox( unsigned char _x1, unsigned char _y1, unsig
 {
 	setWindow( _x1, _y1, _x2, _y2 );
 
-	sendCommand( kRAMWR );
 	unsigned char b1 = (_r << 4) + (_g >> 4);
 	unsigned char b2 = (_b << 4) + (_r >> 4);
 	unsigned char b3 = (_g << 4) + (_b >> 4);
-	
-	int total_words = ((_x2-_x1+1)*(_y2-_y1+1)+1)/2;
-	for (int i=0;i<total_words;++i)
-	{
-		sendData(b1);
-		sendData(b2);
-		sendData(b3);
-	}
 
-	sendCommand( kNOP );
+	int total_words = ((_x2-_x1+1)*(_y2-_y1+1)+1)/2;
+
+	if ( !m_use_SPI )
+	{
+		sendCommand( kRAMWR );
+		for (int i=0;i<total_words;++i)
+		{
+			sendData(b1);
+			sendData(b2);
+			sendData(b3);
+		}
+	}
+	else
+	{
+		addSPICommand( kRAMWR );
+		for (int i=0;i<total_words;++i)
+		{
+			addSPIData(b1);
+			addSPIData(b2);
+			addSPIData(b3);
+			if (m_spi_buffer_index > 150)
+				sendSPIBuffer();
+		}
+		// Send the reminder of the data
+		sendSPIBuffer();
+	}
 }
 
 //=======================================================
@@ -351,9 +489,19 @@ void Beagle_GPIO_Nokia6100::writePair( unsigned char _r1,
 	unsigned char c1 = (_r1<<4) | (_g1>>4);
 	unsigned char c2 = (_b1<<4) | (_r2>>4);
 	unsigned char c3 = (_g2<<4) | (_b2>>4);
-	sendData( c1 );
-	sendData( c2 );
-	sendData( c3 );
+	if ( !m_use_SPI )
+	{
+		sendData( c1 );
+		sendData( c2 );
+		sendData( c3 );
+	}
+	else
+	{
+		addSPIData( c1 );
+		addSPIData( c2 );
+		addSPIData( c3 );
+		sendSPIBuffer();
+	}
 }
 
 //=======================================================
@@ -396,7 +544,15 @@ void Beagle_GPIO_Nokia6100::writeChar( unsigned char _x,
 
 	// Set the write window to the character size
 	setWindow( _x,_y, _x+4,_y+8 );
-	sendCommand( kRAMWR );
+	if ( !m_use_SPI )
+	{
+		sendCommand( kRAMWR );
+	}
+	else
+	{
+		addSPICommand( kRAMWR );
+		sendSPIBuffer();
+	}
 	
 	unsigned char b1,b2;
 	// Write the character
@@ -412,6 +568,41 @@ void Beagle_GPIO_Nokia6100::writeChar( unsigned char _x,
 				   b2 ? _r : 0, b2 ? _g : 0, b2 ? _b : 0 );
 		}
 	}
+}
+
+//=======================================================
+//=======================================================
+
+// Add a command to the SPI Buffer
+void Beagle_GPIO_Nokia6100::addSPICommand( unsigned char _cmd )
+{
+	// Add a command to the buffer
+	m_spi_buffer[m_spi_buffer_index++] = _cmd;
+	m_spi_buffer[m_spi_buffer_index++] = 0x00;
+}
+
+//=======================================================
+//=======================================================
+
+// Add data to the SPI Buffe
+void Beagle_GPIO_Nokia6100::addSPIData( unsigned char _data )
+{
+	// Add a data byte to the buffer
+	m_spi_buffer[m_spi_buffer_index++] = _data;
+	m_spi_buffer[m_spi_buffer_index++] = 0x01;
+}
+
+//=======================================================
+//=======================================================
+
+// Sends an SPI Buffer to screen
+void Beagle_GPIO_Nokia6100::sendSPIBuffer()
+{
+	// Send what is in the buffer
+	m_gpio->sendSPIBuffer( (unsigned long)(m_spi_buffer), m_spi_buffer_index );
+
+	// Reset buffer index
+	m_spi_buffer_index = 0;
 }
 
 //=======================================================

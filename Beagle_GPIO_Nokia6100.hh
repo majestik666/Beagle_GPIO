@@ -24,12 +24,17 @@
 class Beagle_GPIO_Nokia6100
 {
 public:
+	// Regular pins
 	Beagle_GPIO_Nokia6100(
 			Beagle_GPIO * gpio,
-			unsigned short _pin_BL,
 			unsigned short _pin_CS,
 			unsigned short _pin_SCLK,
 			unsigned short _pin_SDATA,
+			unsigned short _pin_RESET );
+
+	// SPI
+	Beagle_GPIO_Nokia6100(
+			Beagle_GPIO * gpio,
 			unsigned short _pin_RESET );
 
 	~Beagle_GPIO_Nokia6100();
@@ -83,7 +88,21 @@ private:
 			unsigned char _g2,
 			unsigned char _b2 );
 
+	// Add a command to the SPI Buffer
+	void addSPICommand( unsigned char _cmd );
+
+	// Add data to the SPI Buffe
+	void addSPIData( unsigned char _data );
+
+	// Sends an SPI Buffer to screen
+	void sendSPIBuffer();
+
 private:
+	unsigned char	m_use_SPI;
+
+	unsigned char *	m_spi_buffer;
+	unsigned int	m_spi_buffer_index;
+
 	Beagle_GPIO * 	m_gpio;
 	unsigned short 	m_pin_BL;
 	unsigned short 	m_pin_CS;
