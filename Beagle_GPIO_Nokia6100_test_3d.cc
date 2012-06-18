@@ -11,17 +11,21 @@ Beagle_GPIO	gpio;
 
 #define abs(a)	(a>0?(a):-(a))
 
-const float cube[24] = {
-	-1.0, -1.0, -1.0,
-	 1.0, -1.0, -1.0,
-	 1.0,  1.0, -1.0,
-	-1.0,  1.0, -1.0,
-	-1.0, -1.0,  1.0,
-	 1.0, -1.0,  1.0,
-	 1.0,  1.0,  1.0,
-	-1.0,  1.0,  1.0 };
+// Vertices
+const int nbPts = 8;
+const float cube[nbPts*3] = {
+	-1.0, -1.0, -1.0,	// 0
+	 1.0, -1.0, -1.0,	// 1
+	 1.0,  1.0, -1.0,	// 2
+	-1.0,  1.0, -1.0,	// 3
+	-1.0, -1.0,  1.0,	// 4
+	 1.0, -1.0,  1.0,	// 5
+	 1.0,  1.0,  1.0,	// 6
+	-1.0,  1.0,  1.0 };	// 7
 
-const int edges[24] = {
+// Edges
+const int nbEdges = 12;
+const int edges[nbEdges*2] = {
 	0, 1,
 	1, 2,
 	2, 3,
@@ -34,6 +38,25 @@ const int edges[24] = {
 	1, 5,
 	2, 6,
 	3, 7 };
+
+// Faces
+const int nbFaces = 6;
+const int faces[nbFaces*4] = {
+	0, 1, 2, 3,	// Front
+	4, 5, 6, 7,	// Back
+	0, 1, 5, 4,	// Bottom
+	3, 2, 6, 7,	// Top
+	1, 5, 6, 2,	// Right
+	0, 4, 7, 3};	// Left
+
+// Faces colors
+const unsigned char faces_color[nbFaces*3] = {
+	0xFF, 0x00, 0x00,
+	0x00, 0xFF, 0x00,
+	0x00, 0x00, 0xFF,
+	0xFF, 0xFF, 0x00,
+	0xFF, 0x00, 0xFF,
+	0x00, 0xFF, 0xFF };
 
 float rotation[3] = { 0.0, 0.0, 0.0 };
 float rot_speed[3] = { 0.04, -0.08, 0.033 };
@@ -83,38 +106,99 @@ void drawLine( int x0, int y0, int x1, int y1, unsigned char r, unsigned char g,
 	}
 }
 
-void hsv2rgb(float h,float s,float v, float &r, float &g, float &b)
+void rasterLine( int x0, int y0, int x1, int y1, int *rl )
 {
-	if (s<0.001)
+	int dx = abs(x1 - x0);
+	int dy = abs(y1 - y0);
+	int sx,sy;
+	if (x0<x1) sx=1; else sx=-1;
+	if (y0<y1) sy=1; else sy=-1;
+	int err = dx-dy;
+
+	for(;;)
 	{
-		r = v;
-		g = v;
-		b = v;
+		if (y0>=0 && y0<130)
+		{
+			if (x0 < rl[2*y0+0])	rl[2*y0+0] = x0>=0?x0:0;
+			if (x0 > rl[2*y0+1])	rl[2*y0+1] = x0<130?x0:130;
+		}
+
+		if (x0==x1 && y0==y1)
+			return;
+		int err2 = 2*err;
+		if (err2 > -dy)
+		{
+			err = err - dy;
+			x0 = x0 + sx;
+		}
+		if (err2 < dx)
+		{
+			err = err + dx;
+			y0 = y0 + sy;
+		}
 	}
-	else
+
+}
+
+void drawPolygons( float *tp, int *pp )
+{
+	float d[nbFaces];
+	// First calculate mid z position of faces
+	for (int i=0;i<nbFaces;++i)
 	{
-		if (h>1.0)
+		d[i] = 0.0;
+		for (int j=0;j<4;++j)
+			d[i] += tp[3*faces[4*i+j]+2];
+	}
+
+	// Sort the faces
+	int sp[nbFaces] = { 0,1,2,3,4,5 };
+	for (int i=0;i<nbFaces-1;++i)
+	{
+		for (int j=i;j<nbFaces;++j)
 		{
-			h = 0.0;
+			if (d[i]<d[j])
+			{
+				float t = d[j]; d[j] = d[i]; d[i] = t;
+				int tt = sp[j]; sp[j] = sp[i]; sp[i] = tt;
+			}
 		}
-		else
+	}
+
+	// Draw back to front
+	for (int p=0;p<nbFaces;++p)
+	{
+		// Sorted Face Index 
+		int pi = sp[p];
+		
+		int rl[130*2];
+		for (int i=0;i<130;++i)
 		{
-			h *= 6.0;
+			rl[2*i+0] = 131;
+			rl[2*i+1] = -1;
 		}
 
-		int i = (int)(h);
-		float f = h - i;
+		// Fill in the 3 edges
+		for (int i=0;i<4;++i)
+		{
+			int p0 = faces[4*pi+0];
+			int p1 = faces[4*pi+1];
+			int p2 = faces[4*pi+2];
+			int p3 = faces[4*pi+3];
+			rasterLine( pp[2*p0+0], pp[2*p0+1], pp[2*p1+0], pp[2*p1+1], rl );
+			rasterLine( pp[2*p1+0], pp[2*p1+1], pp[2*p2+0], pp[2*p2+1], rl );
+			rasterLine( pp[2*p2+0], pp[2*p2+1], pp[2*p3+0], pp[2*p3+1], rl );
+			rasterLine( pp[2*p3+0], pp[2*p3+1], pp[2*p0+0], pp[2*p0+1], rl );
+		}
 
-		float m = v * (1.0-s);
-		float n = v * (1.0-s*f);
-		float k = v * (1.0-s*(1.0-f));
-
-		if (i==0) { r=v; g=k; b=m; return; }
-		if (i==1) { r=n; g=v; b=m; return; }
-		if (i==2) { r=m; g=v; b=k; return; }
-		if (i==3) { r=m; g=n; b=v; return; }
-		if (i==4) { r=k; g=m; b=v; return; }
-		if (i==5) { r=v; g=m; b=n; return; }
+		for (int i=0;i<130;++i)
+		{
+			if ( rl[2*i+1] > rl[2*i+0] )
+			{
+				for( int j=rl[2*i+0]; j<=rl[2*i+1]; ++j )
+					setPixel( j, i, faces_color[3*pi+0], faces_color[3*pi+1], faces_color[3*pi+2] );
+			}
+		}
 	}
 }
 
@@ -131,9 +215,9 @@ int main()
 
 	lcd.initScreen();
 
-	float new_pts[24];
+	float tp[24];
 
-	int pts[16];
+	int pp[16];
 
 	float camx = 0.0;
 	float camy = 0.0;
@@ -145,15 +229,15 @@ int main()
 		memset( frame_buffer, 0, WIDTH*HEIGHT*3 );
 
 		// Checkerboard background
-		int xo = 0;//25.0*sin(3*i/100.0)*cos(2*i/100.0);
-		int yo = 0;//25.0*sin(1*i/100.0)*cos(4*i/100.0);
+		int xo = 25.0*sin(10*i/100.0)*cos(6*i/100.0);
+		int yo = 25.0*sin(5*i/100.0)*cos(7.5*i/100.0);
 
 		for (int x=0;x<WIDTH;x++)
 		{
-			int xx = ((50+x+xo)%WIDTH) % 32;
+			int xx = (50+x+xo)% 32;
 			for (int y=0;y<HEIGHT;++y)
 			{
-				int yy = ((50+y+yo)%HEIGHT) % 32;
+				int yy = (50+y+yo)% 32;
 				if ((xx<16 && yy<16) || (xx>16 && yy>16))
 					setPixel(x,y,0xFF,0xFF,0xFF);
 			}
@@ -170,32 +254,37 @@ int main()
 
 		int scaleFactor = WIDTH/4;
 		float near = 3;
-		float nearToObj = 1.5 + 2.5*sin(5*i/100.0);
-		float x0,y0,z0,x1,y1,z1;
+		float nearToObj = 1.5 + 4.5*sin(5*i/100.0);
+		float x0,y0,z0;
+		float fac;
 
-		for (int j=0;j<8;++j)
+		for (int j=0;j<nbPts;++j)
 		{
 			x0 = cube[3*j+0];
 			y0 = cube[3*j+1];
 			z0 = cube[3*j+2];
 
-			x1 = cosT*x0 + sinT*z0;
-			y1 = -sinTsinP*x0 + cosP*y0 + cosTsinP*z0;
-			z1 = camz + cosTcosP*z0 - sinTcosP*x0 - sinP*y0;
+			tp[3*j+0] = cosT*x0 + sinT*z0;
+			tp[3*j+1] = -sinTsinP*x0 + cosP*y0 + cosTsinP*z0;
+			tp[3*j+2] = camz + cosTcosP*z0 - sinTcosP*x0 - sinP*y0;
 
-			float fac = near * 1.0f / (z1+near+nearToObj);
+			fac = scaleFactor * near * 1.0f / (tp[3*j+2]+near+nearToObj);
 
-			pts[2*j+0] = (int)(WIDTH/2.0f + scaleFactor*fac*x1 + 0.5 );
-			pts[2*j+1] = (int)(WIDTH/2.0f + scaleFactor*fac*y1 + 0.5 );
+			pp[2*j+0] = (int)(WIDTH/2.0f + fac*tp[3*j+0] + 0.5 );
+			pp[2*j+1] = (int)(WIDTH/2.0f + fac*tp[3*j+1] + 0.5 );
 		}
 
-		for (int j=0;j<12;++j)
+		/*
+		for (int j=0;j<nbEdges;++j)
 		{
 			int p1 = edges[2*j+0];
 			int p2 = edges[2*j+1];
 
-			drawLine( pts[2*p1+0],pts[2*p1+1], pts[2*p2+0],pts[2*p2+1], 0xFF,0,0 );
+			drawLine( pp[2*p1+0],pp[2*p1+1], pp[2*p2+0],pp[2*p2+1], 0xFF,0,0 );
 		}
+		*/
+
+		drawPolygons( tp, pp );
 
 		// Send Frame Buffer to screen
 		lcd.writeBuffer( frame_buffer, 0,0, WIDTH,HEIGHT );
