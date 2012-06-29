@@ -1,4 +1,7 @@
 Beagle_GPIO
 ===========
 
-GPIO Library for the Beagle Bone
+C++ Library for the controlling the GPIOs of the Beagle Bone
+
+Francois Sugny
+
