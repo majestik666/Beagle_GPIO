@@ -46,11 +46,12 @@ public:
 	// Move to a specific position on screen
 	void goToPosition( unsigned char _x, unsigned char _y );
 
+	// Turn cursor on/off and blink/solid
+	void setCursor( bool enable, bool blink);
+
 private:
 	// Pulse pin E
 	void pulsePinE();
-	// Pulse pin E & RS
-	void pulsePinERS();
 
 	// Write data to the pins
 	void writeToPins( unsigned char _E,
@@ -58,11 +59,13 @@ private:
 			  unsigned char _DB4,
 			  unsigned char _DB5,
 			  unsigned char _DB6,
-			  unsigned char _DB7,
-			  unsigned char _pinPulse=0);
+			  unsigned char _DB7 );
 
 	// Write a character to screen
-	void writeChar( char _c );
+	void sendChar( char _c );
+
+	// Send a command to screen
+	void sendCommand( char _c );
 
 private:
 	Beagle_GPIO * 	m_gpio;

@@ -83,23 +83,9 @@ Beagle_GPIO_HD44780::~Beagle_GPIO_HD44780()
 void Beagle_GPIO_HD44780::pulsePinE()
 {
 	m_gpio->writePin( m_pin_E, 1 );
-	sleep(0.1);
+	usleep(1000);
 	m_gpio->writePin( m_pin_E, 0 );
-	sleep(0.1);
-}
-
-//=======================================================
-//=======================================================
-
-// Pulse pin E & RS
-void Beagle_GPIO_HD44780::pulsePinERS()
-{
-	m_gpio->writePin( m_pin_E, 1 );
-	m_gpio->writePin( m_pin_RS, 1 );
-	sleep(0.1);
-	m_gpio->writePin( m_pin_E, 0 );
-	m_gpio->writePin( m_pin_RS, 0 );
-	sleep(0.1);
+	usleep(10000);
 }
 
 //=======================================================
@@ -112,8 +98,7 @@ void Beagle_GPIO_HD44780::writeToPins(
 		unsigned char _DB4,
 		unsigned char _DB5,
 		unsigned char _DB6,
-		unsigned char _DB7,
-	        unsigned char _pinPulse	)
+		unsigned char _DB7 )
 {
 	m_gpio->writePin( m_pin_E, _E);
 	m_gpio->writePin( m_pin_RS, _RS);
@@ -121,12 +106,7 @@ void Beagle_GPIO_HD44780::writeToPins(
 	m_gpio->writePin( m_pin_DB5, _DB5);
 	m_gpio->writePin( m_pin_DB6, _DB6);
 	m_gpio->writePin( m_pin_DB7, _DB7);
-	sleep(0.1);
-	if (!_pinPulse)
-		pulsePinE();
-	else
-		pulsePinERS();
-	sleep(0.1);
+	pulsePinE();
 }
 
 //=======================================================
@@ -137,40 +117,29 @@ void Beagle_GPIO_HD44780::initScreen()
 {
 	GPIO_PRINT( "Initializing HD44780 Screen" );
 	// Wait before init 100ms
-	sleep(0.1);
-	GPIO_PRINT( "Init Start" );
+	sleep(1.0);
 
 	// Write Pins
 	writeToPins( 0, 0, 1, 1, 0, 0 );
-	sleep(0.1);
+	usleep(50000);
+
+	// Write Pins
+	writeToPins( 0, 0, 1, 1, 0, 0 );
+	usleep(2000);
+
+	// Write Pins
+	writeToPins( 0, 0, 1, 1, 0, 0 );
+	usleep(2000);
 
 	// Write Pins = 4bits mode
 	writeToPins( 0, 0, 0, 1, 0, 0 );
-	sleep(0.1);
+	usleep(50000);
 
-	// Write Pins = Enable Display Part 1
-	writeToPins( 0, 0, 0, 0, 0, 0 );
-	sleep(0.1);
-
-	// Write Pins = Enable Display Part 2
-	writeToPins( 0, 0, 0, 0, 1, 1 );
-	sleep(0.1);
-
-	// Write Pins = 2 Lines mode Part 1
-	writeToPins( 0, 0, 0, 1, 0, 0 );
-	sleep(0.1);
-
-	// Write Pins = 2 Lines mode Part 2
-	writeToPins( 0, 0, 0, 0, 0, 1 );
-	sleep(0.1);
-	
-	// Write Pins
-	writeToPins( 0, 0, 0, 0, 0, 0 );
-	sleep(0.1);
-
-	// Write Pins
-	writeToPins( 0, 0, 0, 1, 1, 1 );
-	sleep(0.1);
+	sendCommand( 0x28 );
+	sendCommand( 0x08 );
+	sendCommand( 0x01 );
+	sendCommand( 0x06 );
+	sendCommand( 0x0C );
 
 	GPIO_PRINT( "HD44780 Screen Initialized" );
 }
@@ -181,13 +150,7 @@ void Beagle_GPIO_HD44780::initScreen()
 // Clear Screen
 void Beagle_GPIO_HD44780::clearScreen()
 {
-	// Write Pins
-	writeToPins( 1, 0, 0, 0, 0, 0 );
-	sleep(0.1);
-
-	// Write Pins
-	writeToPins( 1, 0, 1, 0, 0, 0 );
-	sleep(0.1);
+	sendCommand( 0x01 );
 }
 
 //=======================================================
@@ -198,21 +161,31 @@ void Beagle_GPIO_HD44780::write( const char * _string )
 {
 	int l = strlen( _string );
 	for ( int i=0; i<l; ++i)
-		writeChar( _string[i] );
+		sendChar( _string[i] );
+}
+
+//=======================================================
+//=======================================================
+
+// Send a command to screen
+void Beagle_GPIO_HD44780::sendCommand( char _c )
+{
+	// Send high 4 bits
+	writeToPins( 0, 0, (_c & 0x10) >> 4, (_c & 0x20) >> 5, (_c & 0x40) >> 6, (_c & 0x80) >> 7 );
+	// Send low 4 bits
+	writeToPins( 0, 0, _c & 0x01,  (_c & 0x02) >> 1, (_c & 0x04) >> 2, (_c & 0x08) >> 3 );
 }
 
 //=======================================================
 //=======================================================
 
 // Write a character to screen
-void Beagle_GPIO_HD44780::writeChar( char _c )
+void Beagle_GPIO_HD44780::sendChar( char _c )
 {
-	// Send low 4 bits
-	writeToPins( 1, 1, _c & 0x01,  (_c & 0x02) >> 1, (_c & 0x04) >> 2, (_c & 0x08) >> 3, 1 );
-	sleep(0.1);
 	// Send high 4 bits
-	writeToPins( 1, 1, (_c & 0x10) >> 4, (_c & 0x20) >> 5, (_c & 0x40) >> 6, (_c & 0x80) >> 7, 1 );
-	sleep(0.1);
+	writeToPins( 0, 1, (_c & 0x10) >> 4, (_c & 0x20) >> 5, (_c & 0x40) >> 6, (_c & 0x80) >> 7 );
+	// Send low 4 bits
+	writeToPins( 0, 1, _c & 0x01,  (_c & 0x02) >> 1, (_c & 0x04) >> 2, (_c & 0x08) >> 3 );
 }
 
 //=======================================================
@@ -221,9 +194,25 @@ void Beagle_GPIO_HD44780::writeChar( char _c )
 // Move to a specific position on screen
 void Beagle_GPIO_HD44780::goToPosition( unsigned char _x, unsigned char _y )
 {
-
+	unsigned char address = _x-1 + _y * 0x40 + 0x80;
+	sendCommand( address );
 }
 
 //=======================================================
 //=======================================================
+
+// Turn cursor on/off and blink/solid
+void Beagle_GPIO_HD44780::setCursor( bool enable, bool blink)
+{
+	unsigned char cmd = 0x0C;
+	if ( enable )
+		cmd += 0x02;
+	if ( blink )
+		cmd += 0x1;
+	sendCommand( cmd );
+}
+
+//=======================================================
+//=======================================================
+
 

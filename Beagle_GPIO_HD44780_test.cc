@@ -20,8 +20,11 @@ int main()
 				 Beagle_GPIO::P8_41,
 				 Beagle_GPIO::P8_40 );
 
+	// Init LCD screen
 	lcd.initScreen();
 
+	// Set cursor
+	lcd.setCursor( false, false );
 
 	// Clear Screen
 	lcd.clearScreen();
@@ -29,7 +32,16 @@ int main()
 	// Write a string to screen
 	lcd.write( "test lcd" );
 
-	sleep(5);
+	lcd.goToPosition(5,1);
+	lcd.write( "at pos" );
+
+	sleep(2);
+	lcd.setCursor( true, false );
+	sleep(2);
+	lcd.setCursor( true, true );
+	sleep(2);
+	lcd.setCursor( false, false );
+	sleep(2);
 
 	lcd.clearScreen();
 
