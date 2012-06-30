@@ -81,7 +81,7 @@ const int Beagle_GPIO::GPIO_Pin_Id[] =
 //=======================================================
 
 // Pad Control Register
-const unsigned long GPIO_Pad_Control[]
+const unsigned long Beagle_GPIO::GPIO_Pad_Control[] =
 {
 	0x0000, 0x0000, 0x0818, 0x081C, 0x0808,	// P8_1  -> P8_5
 	0x080C, 0x0890, 0x0894, 0x089C, 0x0898,	// P8_6  -> P8_10
@@ -108,7 +108,7 @@ const unsigned long GPIO_Pad_Control[]
 //=======================================================
 //=======================================================
 
-const unsigned long Beagle_GPIO::GPIO_Pin_Config = 0x48000000;
+const unsigned long Beagle_GPIO::GPIO_Control_Module_Registers = 0x44E10000;
 
 //=======================================================
 //=======================================================
@@ -140,11 +140,11 @@ Beagle_GPIO::Beagle_GPIO()
 		return;
 	}
 
-	// Map Pin Config 
-	m_pinConf = (unsigned long *)mmap( NULL, 0x10000, PROT_READ | PROT_WRITE, MAP_SHARED, m_gpio_fd, GPIO_Pin_Config );
-	if ( m_pinConf == MAP_FAILED )
+	// Map Control Module 
+	m_controlModule = (unsigned long *)mmap( NULL, 0x1FFF, PROT_READ | PROT_WRITE, MAP_SHARED, m_gpio_fd, GPIO_Control_Module_Registers );
+	if ( m_controlModule == MAP_FAILED )
 	{
-		GPIO_ERROR( "Pin Config Mapping failed" );
+		GPIO_ERROR( "Control Module Mapping failed" );
 		return;
 	}
 
@@ -158,18 +158,6 @@ Beagle_GPIO::Beagle_GPIO()
 			GPIO_ERROR( "GPIO Mapping failed for GPIO Module " << i );
 			return;
 		}
-
-		// Get some info about the GPIO Module
-		unsigned long major = (m_gpio[i][kREVISION] & 0x700) >> 8;
-		unsigned long minor = m_gpio[i][kREVISION] & 0x3F;
-		GPIO_PRINT( "Module Version " << major << "." << minor );
-
-		unsigned long idleMode = (m_gpio[i][kSYSCONFIG] & 0x18) >> 3;
-		unsigned long softReset = (m_gpio[i][kSYSCONFIG] & 0x02) >> 1;
-		unsigned long autoIdle = m_gpio[i][kSYSCONFIG] & 0x01;
-		GPIO_PRINT( "Idle Mode  = " << idleMode );
-		GPIO_PRINT( "Soft Reset = " << softReset );
-		GPIO_PRINT( "Auto Idle  = " << autoIdle );
 	}
 	
 	// Init complete and successfull
@@ -183,7 +171,7 @@ Beagle_GPIO::Beagle_GPIO()
  
 Beagle_GPIO::~Beagle_GPIO()
 {
-	GPIO_PRINT( "Beagle_GPIO::~Beagle_GPIO()" );
+	//GPIO_PRINT( "BeAGLe_GPIO::~Beagle_GPIO()" );
 	if ( m_active && m_gpio_fd)
 		close( m_gpio_fd );
 }
@@ -199,7 +187,10 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::configurePin( unsigned short _pin, 
 	
 	assert(GPIO_Pin_Bank[_pin]>=0);
 	assert(GPIO_Pin_Id[_pin]>=0);
-	
+
+	// Set Pin as GPIO on the pad control
+	m_controlModule[GPIO_Pad_Control[_pin]/4] |= 0x07;
+			
 	unsigned long v = 0x1 << GPIO_Pin_Id[_pin];
 	
 	if ( _direction == kINPUT)
@@ -209,15 +200,45 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::configurePin( unsigned short _pin, 
 	else
 	{
 		m_gpio[GPIO_Pin_Bank[_pin]][kOE/4] &= ~v;
-		m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_0/4] |= v;
-		m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_1/4] |= v;
-
-		GPIO_PRINT( "OE = " << std::hex << m_gpio[GPIO_Pin_Bank[_pin]][kOE/4] );
+		//m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_0/4] |= v;
+		//m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_1/4] |= v;
 	}
 
 	return kSuccess;
 }
+
+//=======================================================
+//=======================================================
  
+// Enable/Disable interrupts for the pin
+Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::enablePinInterrupts( unsigned short _pin, bool _enable )
+{
+	if ( !m_active )
+		return kFail;
+	
+	assert(GPIO_Pin_Bank[_pin]>=0);
+	assert(GPIO_Pin_Id[_pin]>=0);
+
+	// Set Pin as GPIO on the pad control
+	m_controlModule[GPIO_Pad_Control[_pin]/4] |= 0x07;
+			
+	unsigned long v = 0x1 << GPIO_Pin_Id[_pin];
+	
+	if ( _enable )
+	{
+		m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_SET_0/4] |= v;
+		m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_SET_1/4] |= v;
+	}
+	else
+	{
+		m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_0/4] |= v;
+		m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_1/4] |= v;
+	}
+
+	return kSuccess;
+
+}
+
 //=======================================================
 //=======================================================
 
@@ -231,9 +252,9 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::writePin( unsigned short _pin, unsi
 	unsigned long mask = 0x1 << GPIO_Pin_Id[_pin];
 
 	// Remove bit
-	m_gpio[GPIO_Pin_Bank[_pin]][kDATAOUT] &= ~mask;
+	m_gpio[GPIO_Pin_Bank[_pin]][kDATAOUT/4] &= ~mask;
 	// Assign new bit value
-	m_gpio[GPIO_Pin_Bank[_pin]][kDATAOUT] |= v;
+	m_gpio[GPIO_Pin_Bank[_pin]][kDATAOUT/4] |= v;
 
 	return kSuccess;
 }
@@ -248,7 +269,7 @@ unsigned char Beagle_GPIO::readPin( unsigned short _pin, Beagle_GPIO::Beagle_GPI
 	assert(GPIO_Pin_Id[_pin]>=0);
 
 	unsigned long bit = GPIO_Pin_Id[_pin];
-	return (m_gpio[GPIO_Pin_Bank[_pin]][kDATAIN] & (0x1 << bit)) >> bit;
+	return (m_gpio[GPIO_Pin_Bank[_pin]][kDATAIN/4] & (0x1 << bit)) >> bit;
 }
  
 //=======================================================

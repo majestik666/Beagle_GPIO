@@ -123,8 +123,8 @@ public:
 	// Pad Control Register
 	static const unsigned long GPIO_Pad_Control[];
 
-	// Base address of pin config
-	static const unsigned long GPIO_Pin_Config;
+	// Base address of Control Module Registers
+	static const unsigned long GPIO_Control_Module_Registers;
 
 	// Base addresses of GPIO Modules	
 	static const unsigned long GPIO_Base[];
@@ -136,6 +136,8 @@ public:
 public:
 	// Configure pin as input/output
 	Beagle_GPIO_Status configurePin( unsigned short _pin, Beagle_GPIO_Direction _direction );
+	// Enable/Disable interrupts for the pin
+	Beagle_GPIO_Status enablePinInterrupts( unsigned short _pin, bool _enable );
 	// Write a value to a pin
 	Beagle_GPIO_Status writePin( unsigned short _pin, unsigned char _value );
 	// Read a value from a pin
@@ -144,7 +146,7 @@ public:
 private:
 	bool			m_active;
 	int			m_gpio_fd;
-	unsigned long *		m_pinConf;
+	unsigned long *		m_controlModule;
 	unsigned long * 	m_gpio[4];
 };
  
