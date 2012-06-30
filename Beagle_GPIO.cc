@@ -153,7 +153,8 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::configurePin( unsigned short _pin, 
 		m_gpio[GPIO_Pin_Bank[_pin]][kOE/4] |= v;
 	else
 		m_gpio[GPIO_Pin_Bank[_pin]][kOE/4] &= ~v;
-	
+
+	return kSuccess;
 }
  
 //=======================================================
@@ -172,6 +173,8 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::writePin( unsigned short _pin, unsi
 	m_gpio[GPIO_Pin_Bank[_pin]][kDATAOUT] &= ~mask;
 	// Assign new bit value
 	m_gpio[GPIO_Pin_Bank[_pin]][kDATAOUT] |= v;
+
+	return kSuccess;
 }
  
 //=======================================================
