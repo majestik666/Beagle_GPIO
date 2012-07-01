@@ -190,7 +190,7 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::configurePin( unsigned short _pin, 
 
 	// Set Pin as GPIO on the pad control
 	m_controlModule[GPIO_Pad_Control[_pin]/4] |= 0x07;
-			
+
 	unsigned long v = 0x1 << GPIO_Pin_Id[_pin];
 	
 	if ( _direction == kINPUT)

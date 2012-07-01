@@ -25,25 +25,31 @@ int main()
 			Beagle_GPIO::P8_25,
 			Beagle_GPIO::P8_24,
 			Beagle_GPIO::P8_23,	// DB7
-			Beagle_GPIO::P8_42,
-			Beagle_GPIO::P8_41,
-			Beagle_GPIO::P8_40 );
+			Beagle_GPIO::P8_42,	// CS1
+			Beagle_GPIO::P8_41,	// CS2
+			Beagle_GPIO::P8_40 );	// CS3
 
 	// Init LCD screen
 	lcd.initScreen();
 
 	// Clear Screen
-	//lcd.clearScreen();
+	std::cout << "Clear Screen\n";
+	lcd.clearScreen();
 
+	sleep(2);
+	std::cout << "Writing Pixels\n";
 	// Write a pixel
-	lcd.setPixel( 20,30, 0xFF );
+	for (int i=0;i<20;++i)
+		lcd.setPixel( i,i, 0xFF );
+
+	sleep(5);
 
 	// Write a string to screen
-	lcd.goToPosition(3,0);
-	lcd.write( "Beagle_GPIO" );
+	//lcd.goToPosition(3,0);
+	//lcd.write( "Beagle_GPIO" );
 
-	lcd.goToPosition(3,1);
-	lcd.write( "KS0108 Test" );
+	//lcd.goToPosition(3,1);
+	//lcd.write( "KS0108 Test" );
 
 	//lcd.clearScreen();
 
