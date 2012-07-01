@@ -30,10 +30,11 @@ int main()
 	lcd.clearScreen();
 
 	// Write a string to screen
-	lcd.write( "test lcd" );
+	lcd.goToPosition(3,0);
+	lcd.write( "Beagle_GPIO" );
 
-	lcd.goToPosition(5,1);
-	lcd.write( "at pos" );
+	lcd.goToPosition(3,1);
+	lcd.write( "HD44780 Test" );
 
 	sleep(2);
 	lcd.setCursor( true, false );
