@@ -14,9 +14,9 @@ int main()
 
 	Beagle_GPIO_KS0108 lcd(
 			&gpio,
-			Beagle_GPIO::P8_45,	// RS
-			Beagle_GPIO::P8_44,	// RW
-			Beagle_GPIO::P8_43,	// E
+			Beagle_GPIO::P8_46,	// RS
+			Beagle_GPIO::P8_45,	// RW
+			Beagle_GPIO::P8_44,	// E
 			Beagle_GPIO::P8_30,	// DB0
 			Beagle_GPIO::P8_29,
 			Beagle_GPIO::P8_28,
@@ -25,22 +25,18 @@ int main()
 			Beagle_GPIO::P8_25,
 			Beagle_GPIO::P8_24,
 			Beagle_GPIO::P8_23,	// DB7
-			Beagle_GPIO::P8_42,	// CS1
-			Beagle_GPIO::P8_41,	// CS2
-			Beagle_GPIO::P8_40 );	// CS3
+			Beagle_GPIO::P8_43,	// CS1
+			Beagle_GPIO::P8_42);	// CS2
 
 	// Init LCD screen
 	lcd.initScreen();
 
 	// Clear Screen
-	std::cout << "Clear Screen\n";
-	lcd.clearScreen();
+	//lcd.clearScreen();
 
-	sleep(2);
-	std::cout << "Writing Pixels\n";
 	// Write a pixel
-	for (int i=0;i<20;++i)
-		lcd.setPixel( i,i, 0xFF );
+	//for (int i=0;i<20;++i)
+	//	lcd.setPixel( i,i, 0xFF );
 
 	sleep(5);
 

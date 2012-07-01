@@ -32,8 +32,7 @@ Beagle_GPIO_KS0108::Beagle_GPIO_KS0108(
 			unsigned short _pin_DB6,
 			unsigned short _pin_DB7,
 			unsigned short _pin_CS1,
-			unsigned short _pin_CS2,
-			unsigned short _pin_CS3 )
+			unsigned short _pin_CS2)
 {
 	if (!gpio || !gpio->isActive())
 	{
@@ -56,7 +55,6 @@ Beagle_GPIO_KS0108::Beagle_GPIO_KS0108(
 	m_pin_DB7 = _pin_DB7;
 	m_pin_CS1 = _pin_CS1;
 	m_pin_CS2 = _pin_CS2;
-	m_pin_CS3 = _pin_CS3;
 
 	// Initialize pins on the board
 	gpio->configurePin( m_pin_RS,  Beagle_GPIO::kOUTPUT );
@@ -64,12 +62,13 @@ Beagle_GPIO_KS0108::Beagle_GPIO_KS0108(
 	gpio->configurePin( m_pin_E,   Beagle_GPIO::kOUTPUT );
 	gpio->configurePin( m_pin_CS1, Beagle_GPIO::kOUTPUT );
 	gpio->configurePin( m_pin_CS2, Beagle_GPIO::kOUTPUT );
-	gpio->configurePin( m_pin_CS3, Beagle_GPIO::kOUTPUT );
-	setDataPortAsOutput();
-
 	m_gpio->writePin( m_pin_RS,  0);
 	m_gpio->writePin( m_pin_RW,  0);
 	m_gpio->writePin( m_pin_E,   0);
+	m_gpio->writePin( m_pin_CS1, 1);
+	m_gpio->writePin( m_pin_CS2, 1);
+
+	setDataPortAsOutput();
 	m_gpio->writePin( m_pin_DB0, 0);
 	m_gpio->writePin( m_pin_DB1, 0);
 	m_gpio->writePin( m_pin_DB2, 0);
@@ -78,11 +77,7 @@ Beagle_GPIO_KS0108::Beagle_GPIO_KS0108(
 	m_gpio->writePin( m_pin_DB5, 0);
 	m_gpio->writePin( m_pin_DB6, 0);
 	m_gpio->writePin( m_pin_DB7, 0);
-	m_gpio->writePin( m_pin_CS1, 1);
-	m_gpio->writePin( m_pin_CS2, 1);
-	m_gpio->writePin( m_pin_CS3, 1);
 
-	goToPosition( 0, 0 );
 }
 
 //=======================================================
@@ -102,22 +97,68 @@ void Beagle_GPIO_KS0108::initScreen()
 {
 	GPIO_PRINT( "Initializing KS0108 Screen" );
 
-	// Wait 200ms
-	sleep( 0.2 );
+	// Wait 20ms
+	usleep( 20000 );
 
-	for ( int i=0; i<3; ++i )
+	for ( int i=0; i<2; ++i )
+		writeCommand( 0x3E, i );
+
+	usleep( 25000 );
+
+	for ( int i=0; i<2; ++i )
 		writeCommand( 0x3F, i );
 	
 	// Wait 200ms
-	sleep( 0.2 );
+	usleep( 200000 );
 
-	for ( int i=0; i<3; ++i )
+	for ( int i=0; i<2; ++i )
 		writeCommand( 0xC0, i );
 	
+
+	m_gpio->writePin( m_pin_RS, 0 );
+	m_gpio->writePin( m_pin_RW, 0 );
+	m_gpio->writePin( m_pin_E, 0 );
+	m_gpio->writePin( m_pin_CS1, 0 );
+	m_gpio->writePin( m_pin_CS2, 0 );
+
+	writeDataPort( 0xC0 );
+	usleep(10000);
+	m_gpio->writePin( m_pin_E, 1 );
+	usleep(50000);
+	m_gpio->writePin( m_pin_E, 0 );
+	usleep(50000);
+
+
+	writeDataPort( 0xB8 );
+	usleep(10000);
+	m_gpio->writePin( m_pin_E, 1 );
+	usleep(50000);
+	m_gpio->writePin( m_pin_E, 0 );
+	usleep(50000);
+
+	writeDataPort( 0x40 );
+	usleep(10000);
+	m_gpio->writePin( m_pin_E, 1 );
+	usleep(50000);
+	m_gpio->writePin( m_pin_E, 0 );
+	usleep(50000);
+
+	writeDataPort( 0x3F );
+	usleep(10000);
+	m_gpio->writePin( m_pin_E, 1 );
+	usleep(50000);
+	m_gpio->writePin( m_pin_E, 0 );
+	usleep(50000);
+
 	// Wait 200ms
-	sleep( 0.2 );
+	usleep( 200000 );
 
 	GPIO_PRINT( "KS0108 Screen Initialized" );
+
+	for (unsigned char i=0;i<64;++i)
+		writeData( i );
+	while(1);
+
 }
 
 //=======================================================
@@ -129,8 +170,11 @@ void Beagle_GPIO_KS0108::clearScreen()
 	for ( int j=0; j<64/8; ++j )
 	{
 		goToPosition( 0, 8*j );
-		for ( int i=0; i<128; ++i )
+		for ( int i=0; i<128/8; ++i )
+		{
 			writeData( 0x00 );
+			m_screenX++;
+		}
 	}
 	goToPosition(0,0);
 }
@@ -157,11 +201,11 @@ void Beagle_GPIO_KS0108::setPixel( unsigned char _x, unsigned char _y, unsigned 
 // Enable Controller
 void Beagle_GPIO_KS0108::enableController( unsigned char _controller )
 {
+	std::cout << "Enable controller " << (int)(_controller) << "\n";
 	switch( _controller)
 	{
-		case 0: m_gpio->writePin( m_pin_CS1, 0 ); break;
-		case 1: m_gpio->writePin( m_pin_CS2, 0 ); break;
-		case 2: m_gpio->writePin( m_pin_CS3, 0 ); break;
+		case 0: m_gpio->writePin( m_pin_CS1, 0 ); m_gpio->writePin( m_pin_CS2, 1 ); break;
+		case 1: m_gpio->writePin( m_pin_CS1, 1 ); m_gpio->writePin( m_pin_CS2, 0 ); break;
 	};
 }
 
@@ -173,9 +217,8 @@ void Beagle_GPIO_KS0108::disableController( unsigned char _controller )
 {
 	switch( _controller)
 	{
-		case 0: m_gpio->writePin( m_pin_CS1, 1 ); break;
-		case 1: m_gpio->writePin( m_pin_CS2, 1 ); break;
-		case 2: m_gpio->writePin( m_pin_CS3, 1 ); break;
+		case 0: m_gpio->writePin( m_pin_CS1, 1 ); m_gpio->writePin( m_pin_CS2, 0 ); break;
+		case 1: m_gpio->writePin( m_pin_CS1, 0 ); m_gpio->writePin( m_pin_CS2, 1 ); break;
 	};
 }
 
@@ -236,14 +279,14 @@ unsigned char Beagle_GPIO_KS0108::readDataPort()
 // Write Data Port
 void Beagle_GPIO_KS0108::writeDataPort( unsigned char _c )
 {
-	m_gpio->writePin( m_pin_DB0, (_c & 0x01) );
-	m_gpio->writePin( m_pin_DB1, (_c & 0x02) >> 1 );
-	m_gpio->writePin( m_pin_DB2, (_c & 0x04) >> 2 );
-	m_gpio->writePin( m_pin_DB3, (_c & 0x08) >> 3 );
-	m_gpio->writePin( m_pin_DB4, (_c & 0x10) >> 4 );
-	m_gpio->writePin( m_pin_DB5, (_c & 0x20) >> 5 );
-	m_gpio->writePin( m_pin_DB6, (_c & 0x40) >> 6 );
-	m_gpio->writePin( m_pin_DB7, (_c & 0x80) >> 7 );
+	m_gpio->writePin( m_pin_DB7, (_c & 0x01) );
+	m_gpio->writePin( m_pin_DB6, (_c & 0x02) >> 1 );
+	m_gpio->writePin( m_pin_DB5, (_c & 0x04) >> 2 );
+	m_gpio->writePin( m_pin_DB4, (_c & 0x08) >> 3 );
+	m_gpio->writePin( m_pin_DB3, (_c & 0x10) >> 4 );
+	m_gpio->writePin( m_pin_DB2, (_c & 0x20) >> 5 );
+	m_gpio->writePin( m_pin_DB1, (_c & 0x40) >> 6 );
+	m_gpio->writePin( m_pin_DB0, (_c & 0x80) >> 7 );
 }
 
 //=======================================================
@@ -262,13 +305,13 @@ unsigned char Beagle_GPIO_KS0108::readStatus( unsigned char _controller )
 	m_gpio->writePin( m_pin_RS, 0 );
 
 	// Enable Controller
-	enableController( _controller );
+	//enableController( _controller );
 
 	// E = 1
 	m_gpio->writePin( m_pin_E, 1 );
 
 	// wait 1ms
-	usleep(10);
+	usleep(1000);
 
 	// Read Data Port
 	unsigned char status = readDataPort();
@@ -277,7 +320,7 @@ unsigned char Beagle_GPIO_KS0108::readStatus( unsigned char _controller )
 	m_gpio->writePin( m_pin_E, 0 );
 
 	// Disable Controller
-	disableController( _controller );
+	//disableController( _controller );
 
 	return status;
 }
@@ -335,7 +378,7 @@ void Beagle_GPIO_KS0108::goToPosition( unsigned char _x, unsigned char _y )
 void Beagle_GPIO_KS0108::writeData( unsigned char _c )
 {
 	// Wait for controller busy flag
-	while( readStatus( m_screenX/64 ) & 0x80 );
+	//while( readStatus( m_screenX/64 ) & 0x80 );
 
 	// Set Data port as output
 	setDataPortAsOutput();
@@ -343,24 +386,28 @@ void Beagle_GPIO_KS0108::writeData( unsigned char _c )
 	// RW=0 RS=1
 	m_gpio->writePin( m_pin_RW, 0 );
 	m_gpio->writePin( m_pin_RS, 1 );
+	m_gpio->writePin( m_pin_E, 0 );
+
+	// Delay
+	usleep(1000);
 
 	// Write command to Data Port
 	writeDataPort( _c );
 
 	// Enable controller
-	enableController( m_screenX / 64 );
+	//enableController( m_screenX / 64 );
 
 	// E = 1
 	m_gpio->writePin( m_pin_E, 1 );
 
 	// Delay
-	usleep(10);
+	usleep(1000);
 
 	// E = 0
 	m_gpio->writePin( m_pin_E, 0 );
 
 	// Disable controller
-	disableController( m_screenX / 64 );
+	//disableController( m_screenX / 64 );
 }
 
 //=======================================================
@@ -382,11 +429,14 @@ unsigned char Beagle_GPIO_KS0108::readData()
 	m_gpio->writePin( m_pin_RW, 1 );
 	m_gpio->writePin( m_pin_RS, 1 );
 
+	// Delay
+	usleep(1000);
+
 	// E = 1
 	m_gpio->writePin( m_pin_E, 1 );
 
 	// Delay
-	usleep(10);
+	usleep(1000);
 
 	// Read actual data
 	unsigned char result = readDataPort();
@@ -407,7 +457,7 @@ unsigned char Beagle_GPIO_KS0108::readData()
 void Beagle_GPIO_KS0108::writeCommand( unsigned char _c, unsigned char _controller )
 {
 	// Wait for controller busy flag
-	while( readStatus(_controller) & 0x80 );
+	//while( readStatus(_controller) & 0x80 );
 
 	// Set Data as output
 	setDataPortAsOutput();
@@ -415,9 +465,16 @@ void Beagle_GPIO_KS0108::writeCommand( unsigned char _c, unsigned char _controll
 	// RW=0 RS=0
 	m_gpio->writePin( m_pin_RW, 0 );
 	m_gpio->writePin( m_pin_RS, 0 );
+	m_gpio->writePin( m_pin_E, 0 );
+
+	// Delay
+	usleep(1000);
 
 	// Enable controller
-	enableController( _controller );
+	//enableController( _controller );
+
+	// Delay
+	usleep(1000);
 
 	// Write command to Data Port
 	writeDataPort( _c );
@@ -426,13 +483,13 @@ void Beagle_GPIO_KS0108::writeCommand( unsigned char _c, unsigned char _controll
 	m_gpio->writePin( m_pin_E, 1 );
 
 	// Delay
-	usleep(10);
+	usleep(1000);
 
 	// E = 0
 	m_gpio->writePin( m_pin_E, 0 );
 
 	// Disable controller
-	disableController( _controller );
+	//disableController( _controller );
 }
 
 //=======================================================

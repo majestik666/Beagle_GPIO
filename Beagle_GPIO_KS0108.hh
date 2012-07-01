@@ -38,8 +38,7 @@ public:
 			unsigned short _pin_DB6,
 			unsigned short _pin_DB7,
 			unsigned short _pin_CS1,
-			unsigned short _pin_CS2,
-			unsigned short _pin_CS3 );
+			unsigned short _pin_CS2 );
 
 	~Beagle_GPIO_KS0108();
 
