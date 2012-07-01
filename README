@@ -1,7 +1,10 @@
 Beagle_GPIO
 ===========
 
-C++ Library to control GPIOs of the Beagle Bone
+Generic C++ Library to control GPIOs of the Beagle Bone using
+the memory mapping technique.
+
+HD44780 Compatible displays code.
 
 Francois Sugny
 
