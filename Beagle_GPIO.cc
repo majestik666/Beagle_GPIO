@@ -265,7 +265,7 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::writePin( unsigned short _pin, unsi
 //=======================================================
 
 // Read a value from a pin
-unsigned char Beagle_GPIO::readPin( unsigned short _pin, Beagle_GPIO::Beagle_GPIO_Status & status )
+unsigned char Beagle_GPIO::readPin( unsigned short _pin )
 {
 	assert(GPIO_Pin_Bank[_pin]>=0);
 	assert(GPIO_Pin_Id[_pin]>=0);

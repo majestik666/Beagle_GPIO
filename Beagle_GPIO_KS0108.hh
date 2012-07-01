@@ -26,20 +26,20 @@ class Beagle_GPIO_KS0108
 public:
 	Beagle_GPIO_KS0108(
 			Beagle_GPIO * gpio,
-			unsigned char _RS,
-			unsigned char _RW,
-			unsigned char _E,
-			unsigned char _DB0,
-			unsigned char _DB1,
-			unsigned char _DB2,
-			unsigned char _DB3,
-			unsigned char _DB4,
-			unsigned char _DB5,
-			unsigned char _DB6,
-			unsigned char _DB7,
-			unsigned char _CS1,
-			unsigned char _CS2,
-			unsigned char _CS3 );
+			unsigned short _pin_RS,
+			unsigned short _pin_RW,
+			unsigned short _pin_E,
+			unsigned short _pin_DB0,
+			unsigned short _pin_DB1,
+			unsigned short _pin_DB2,
+			unsigned short _pin_DB3,
+			unsigned short _pin_DB4,
+			unsigned short _pin_DB5,
+			unsigned short _pin_DB6,
+			unsigned short _pin_DB7,
+			unsigned short _pin_CS1,
+			unsigned short _pin_CS2,
+			unsigned short _pin_CS3 );
 
 	~Beagle_GPIO_KS0108();
 
