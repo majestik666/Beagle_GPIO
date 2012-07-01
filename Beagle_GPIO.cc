@@ -200,9 +200,11 @@ Beagle_GPIO::Beagle_GPIO_Status Beagle_GPIO::configurePin( unsigned short _pin, 
 	else
 	{
 		m_gpio[GPIO_Pin_Bank[_pin]][kOE/4] &= ~v;
-		//m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_0/4] |= v;
-		//m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_1/4] |= v;
 	}
+
+	// Disable Interrupts by default
+	m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_0/4] |= v;
+	m_gpio[GPIO_Pin_Bank[_pin]][kIRQSTATUS_CLR_1/4] |= v;
 
 	return kSuccess;
 }
