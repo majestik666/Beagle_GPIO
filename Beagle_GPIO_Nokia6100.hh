@@ -41,10 +41,18 @@ public:
 	void clearScreen();
 
 	// Write a string to screen
-	void write( const char * _string );
+	void write( unsigned char _x,
+		    unsigned char _y,
+		    const char * _string,
+		    unsigned char _r,
+		    unsigned char _g,
+		    unsigned char _b );
 
 	// Write a single pixel
 	void setPixel( unsigned char _x, unsigned char _y, unsigned char _r, unsigned char _g, unsigned char _b );
+
+	// Fill a box on screen
+	void fillBox( unsigned char _x1, unsigned char _y1, unsigned char _x2, unsigned char _y2, unsigned char _c, unsigned char _g, unsigned char _b );
 
 private:
 	// Shift a byte to the screen
@@ -59,6 +67,22 @@ private:
 	// Set window on display
 	void setWindow( unsigned char _x1, unsigned char _y1, unsigned char _x2, unsigned char _y2 );
 
+	// Write a single character
+	void writeChar( unsigned char _x, 
+			unsigned char _y, 
+			char _c, 
+			unsigned char _r,
+			unsigned char _g,
+			unsigned char _b );
+
+	// Write a pair of pixels at a time
+	void writePair( unsigned char _r1,
+			unsigned char _g1,
+			unsigned char _b1,
+			unsigned char _r2,
+			unsigned char _g2,
+			unsigned char _b2 );
+
 private:
 	Beagle_GPIO * 	m_gpio;
 	unsigned short 	m_pin_BL;
@@ -66,6 +90,9 @@ private:
 	unsigned short 	m_pin_SCLK;
 	unsigned short 	m_pin_SDATA;
 	unsigned short 	m_pin_RESET;
+
+	// Array storing the font
+	static const unsigned char font_5x8[];
 
 public:
 	enum

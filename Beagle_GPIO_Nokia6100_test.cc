@@ -27,26 +27,13 @@ int main()
 	// Clear Screen
 	//lcd.clearScreen();
 
-	// Write a pixel
-	for (int i=0;i<20;++i)
-		lcd.setPixel( i,i, 0xFF, 0xFF, 0x00 );
+	lcd.fillBox( 0, 0, 50, 50, 0xFF, 0x00, 0x00 );
+	lcd.fillBox( 40, 40, 75, 75, 0x00, 0xFF, 0x00 );
+	lcd.fillBox( 70, 70, 100, 100, 0x00, 0x00, 0xFF );
 
-	while(1)
-	{
-		gpio.writePin( Beagle_GPIO::P8_46, 0 );
-		sleep(1);
-		gpio.writePin( Beagle_GPIO::P8_46, 1 );
-		sleep(1);
-	}
-
-	// Write a string to screen
-	//lcd.goToPosition(3,0);
-	//lcd.write( "Beagle_GPIO" );
-
-	//lcd.goToPosition(3,1);
-	//lcd.write( "Nokia6100 Test" );
-
-	//lcd.clearScreen();
+	lcd.write( 33, 25, "Beagle_GPIO", 0xFF, 0xFF, 0xFF );
+	lcd.write( 35, 35, "Nokia 6100", 0xFF, 0xFF, 0xFF );
+	lcd.write( 57, 45, "LCD", 0xFF, 0xFF, 0xFF );
 
 	return 0;
 }
