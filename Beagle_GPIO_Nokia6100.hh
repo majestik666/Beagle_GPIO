@@ -59,6 +59,9 @@ public:
 	// Fill a box on screen
 	void fillBox( unsigned char _x1, unsigned char _y1, unsigned char _x2, unsigned char _y2, unsigned char _c, unsigned char _g, unsigned char _b );
 
+	// Write a buffer to screen
+	void writeBuffer( unsigned char *buffer, unsigned char _x, unsigned char _y, unsigned char _w, unsigned char _h );
+
 private:
 	// Shift a byte to the screen
 	void shiftBits( unsigned char _c );
