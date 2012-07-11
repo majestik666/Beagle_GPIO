@@ -345,7 +345,7 @@ void Beagle_GPIO_Nokia6100::initScreen()
 		addSPIData( 0x02 );
 
 		addSPICommand( kVOLCTR );
-		addSPIData( 0x10 );
+		addSPIData( 0x20 );
 		addSPIData( 0x03 );
 
 		addSPICommand( kNOP );
@@ -508,7 +508,7 @@ void Beagle_GPIO_Nokia6100::writePair( unsigned char _r1,
 //=======================================================
 
 // Write a string to screen
-void Beagle_GPIO_Nokia6100::write( unsigned char _x,
+void Beagle_GPIO_Nokia6100::print( unsigned char _x,
 				   unsigned char _y,
 				   const char * _string,
 				   unsigned char _r,
@@ -517,7 +517,7 @@ void Beagle_GPIO_Nokia6100::write( unsigned char _x,
 {
 	while( *_string )
 	{
-		writeChar( _x, _y, *_string, _r,_g,_b );
+		printChar( _x, _y, *_string, _r,_g,_b );
 		_x += 6;
 		_string++;
 	};
@@ -527,7 +527,7 @@ void Beagle_GPIO_Nokia6100::write( unsigned char _x,
 //=======================================================
 
 // Write a single character
-void Beagle_GPIO_Nokia6100::writeChar( unsigned char _x, 
+void Beagle_GPIO_Nokia6100::printChar( unsigned char _x, 
 				       unsigned char _y,
 				       char _c,
 				       unsigned char _r,

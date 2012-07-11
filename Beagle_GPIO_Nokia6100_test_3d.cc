@@ -1,13 +1,21 @@
 
 #include "Beagle_GPIO.hh"
 #include "Beagle_GPIO_Nokia6100.hh"
+#include "FrameBuffer.hh"
+#include "BeagleBone_png.hh"
 
 #include <iostream>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+#define WIDTH	130
+#define HEIGHT  130
 
 Beagle_GPIO	gpio;
+FrameBuffer	frameBuffer(WIDTH,HEIGHT);
 
 #define abs(a)	(a>0?(a):-(a))
 
@@ -61,85 +69,6 @@ const unsigned char faces_color[nbFaces*3] = {
 float rotation[3] = { 0.0, 0.0, 0.0 };
 float rot_speed[3] = { 0.04, -0.08, 0.033 };
 
-unsigned char * frame_buffer;
-
-#define WIDTH	130
-#define HEIGHT  130
-
-void setPixel( int x, int y, unsigned char r, unsigned char g, unsigned char b )
-{
-	if (x>=0 && x<WIDTH && y>=0 && y<HEIGHT)
-	{
-		frame_buffer[3*(y*WIDTH+x)+0] = r;
-		frame_buffer[3*(y*WIDTH+x)+1] = g;
-		frame_buffer[3*(y*WIDTH+x)+2] = b;
-	}
-}
-
-void drawLine( int x0, int y0, int x1, int y1, unsigned char r, unsigned char g, unsigned char b)
-{
-	int dx = abs(x1 - x0);
-	int dy = abs(y1 - y0);
-	int sx,sy;
-	if (x0<x1) sx=1; else sx=-1;
-	if (y0<y1) sy=1; else sy=-1;
-	int err = dx-dy;
-
-	for(;;)
-	{
-		setPixel(x0,y0,r,g,b);
-		setPixel(x0+1,y0,r,g,b);
-		setPixel(x0-1,y0,r,g,b);
-		if (x0==x1 && y0==y1)
-			return;
-		int err2 = 2*err;
-		if (err2 > -dy)
-		{
-			err = err - dy;
-			x0 = x0 + sx;
-		}
-		if (err2 < dx)
-		{
-			err = err + dx;
-			y0 = y0 + sy;
-		}
-	}
-}
-
-void rasterLine( int x0, int y0, int x1, int y1, int *rl )
-{
-	int dx = abs(x1 - x0);
-	int dy = abs(y1 - y0);
-	int sx,sy;
-	if (x0<x1) sx=1; else sx=-1;
-	if (y0<y1) sy=1; else sy=-1;
-	int err = dx-dy;
-
-	for(;;)
-	{
-		if (y0>=0 && y0<130)
-		{
-			if (x0 < rl[2*y0+0])	rl[2*y0+0] = x0>=0?x0:0;
-			if (x0 > rl[2*y0+1])	rl[2*y0+1] = x0<130?x0:130;
-		}
-
-		if (x0==x1 && y0==y1)
-			return;
-		int err2 = 2*err;
-		if (err2 > -dy)
-		{
-			err = err - dy;
-			x0 = x0 + sx;
-		}
-		if (err2 < dx)
-		{
-			err = err + dx;
-			y0 = y0 + sy;
-		}
-	}
-
-}
-
 void drawPolygons( float *tp, int *pp )
 {
 	float d[nbFaces];
@@ -170,35 +99,18 @@ void drawPolygons( float *tp, int *pp )
 	{
 		// Sorted Face Index 
 		int pi = sp[p];
-		
-		int rl[130*2];
-		for (int i=0;i<130;++i)
-		{
-			rl[2*i+0] = 131;
-			rl[2*i+1] = -1;
-		}
+		int p0 = faces[4*pi+0];
+		int p1 = faces[4*pi+1];
+		int p2 = faces[4*pi+2];
+		int p3 = faces[4*pi+3];
 
-		// Fill in the 3 edges
-		for (int i=0;i<4;++i)
-		{
-			int p0 = faces[4*pi+0];
-			int p1 = faces[4*pi+1];
-			int p2 = faces[4*pi+2];
-			int p3 = faces[4*pi+3];
-			rasterLine( pp[2*p0+0], pp[2*p0+1], pp[2*p1+0], pp[2*p1+1], rl );
-			rasterLine( pp[2*p1+0], pp[2*p1+1], pp[2*p2+0], pp[2*p2+1], rl );
-			rasterLine( pp[2*p2+0], pp[2*p2+1], pp[2*p3+0], pp[2*p3+1], rl );
-			rasterLine( pp[2*p3+0], pp[2*p3+1], pp[2*p0+0], pp[2*p0+1], rl );
-		}
-
-		for (int i=0;i<130;++i)
-		{
-			if ( rl[2*i+1] > rl[2*i+0] )
-			{
-				for( int j=rl[2*i+0]; j<=rl[2*i+1]; ++j )
-					setPixel( j, i, faces_color[3*pi+0], faces_color[3*pi+1], faces_color[3*pi+2] );
-			}
-		}
+		frameBuffer.drawPolygon( pp[2*p0+0], pp[2*p0+1],
+					pp[2*p1+0], pp[2*p1+1],
+					pp[2*p2+0], pp[2*p2+1],
+					pp[2*p3+0], pp[2*p3+1],
+					faces_color[3*pi+0],
+					faces_color[3*pi+1],
+					faces_color[3*pi+2] );
 	}
 }
 
@@ -208,12 +120,37 @@ int main()
 	GPIO_PRINT( "BeagleBone GPIO Nokia6100 Test 3D" );
 	GPIO_PRINT( "=================================" );
 
-	frame_buffer = new unsigned char[WIDTH*HEIGHT*3];
-
 	// SPI Interface
 	Beagle_GPIO_Nokia6100 lcd( & gpio, Beagle_GPIO::P8_42 );
 
 	lcd.initScreen();
+
+	//////////////////////////////////////////////////////////////////////////
+	// IMAGE
+	//////////////////////////////////////////////////////////////////////////
+
+	for (int i=0;i<130;++i)
+	{
+		for (int j=0;j<130;++j)
+		{
+			for (int k=0;k<3;++k)
+			{
+				frameBuffer.setPixel(i,j,
+						beaglebone_png[3*(130*j+i)+0],
+						beaglebone_png[3*(130*j+i)+1],
+						beaglebone_png[3*(130*j+i)+2]);
+			}
+		}
+	}
+
+	// Send Frame Buffer to screen
+	lcd.writeBuffer( frameBuffer.getBuffer(), 0,0, WIDTH,HEIGHT );
+
+	sleep(2);
+
+	//////////////////////////////////////////////////////////////////////////
+	// 3D CUBE
+	//////////////////////////////////////////////////////////////////////////
 
 	float tp[24];
 
@@ -223,10 +160,26 @@ int main()
 	float camy = 0.0;
 	float camz = 2.0;
 
-	for(int i=0;i<1000;++i)
+	// Timer stuff
+	struct timeval times[2];
+
+	int time_index = 0;
+	gettimeofday( &times[time_index++], NULL );
+
+	char fpsStr[256];
+
+	for(int i=0;i<500;++i)
 	{
+		gettimeofday( &times[time_index], NULL );
+		time_index = (time_index+1)%2;
+		long seconds  = times[1-time_index].tv_sec - times[time_index].tv_sec;
+		long useconds = times[1-time_index].tv_usec - times[time_index].tv_usec;
+		long mtime = (seconds*1000 + useconds/1000.0) + 0.5;
+
+		sprintf(fpsStr,"%3d fps", (int)(1000.0/mtime));
+
 		// Clear the buffer
-		memset( frame_buffer, 0, WIDTH*HEIGHT*3 );
+		frameBuffer.clear();
 
 		// Checkerboard background
 		int xo = 25.0*sin(10*i/100.0)*cos(6*i/100.0);
@@ -239,7 +192,9 @@ int main()
 			{
 				int yy = (50+y+yo)% 32;
 				if ((xx<16 && yy<16) || (xx>16 && yy>16))
-					setPixel(x,y,0xFF,0xFF,0xFF);
+				{
+					frameBuffer.setPixel(x,y,0xFF,0xFF,0xFF);
+				}
 			}
 		}
 
@@ -254,7 +209,7 @@ int main()
 
 		int scaleFactor = WIDTH/4;
 		float near = 3;
-		float nearToObj = 1.5 + 4.5*sin(5*i/100.0);
+		float nearToObj = 1.5 + 3.0*sin(5*i/100.0);
 		float x0,y0,z0;
 		float fac;
 
@@ -280,20 +235,28 @@ int main()
 			int p1 = edges[2*j+0];
 			int p2 = edges[2*j+1];
 
+			frameBuffer.drawLine( pp[2*p1+0],pp[2*p1+1], pp[2*p2+0],pp[2*p2+1], 0xFF,0,0 );
 			drawLine( pp[2*p1+0],pp[2*p1+1], pp[2*p2+0],pp[2*p2+1], 0xFF,0,0 );
 		}
 		*/
 
 		drawPolygons( tp, pp );
 
+		frameBuffer.print(11,91,"BeagleBone",0,0,0);
+		frameBuffer.print(10,90,"BeagleBone",0,0,255);
+
+		frameBuffer.print(11,101,"Nokia 6100 LCD",0,0,0);
+		frameBuffer.print(10,100,"Nokia 6100 LCD",0,0,255);
+
+		frameBuffer.print(11,111,fpsStr,0,0,0);
+		frameBuffer.print(10,110,fpsStr,255,0,0);
+
 		// Send Frame Buffer to screen
-		lcd.writeBuffer( frame_buffer, 0,0, WIDTH,HEIGHT );
+		lcd.writeBuffer( frameBuffer.getBuffer(), 0,0, WIDTH,HEIGHT );
 
 		for (int j=0;j<3;++j)
 			rotation[j] += rot_speed[j];
 	}
-
-	delete [] frame_buffer;
 
 	return 0;
 }

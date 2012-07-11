@@ -1,0 +1,364 @@
+/******************************
+ ** Beagle Bone GPIO Library **
+ **                          **
+ **      Francois Sugny      **
+ **         01/07/12         **
+ **                          **
+ **          v1.0            ** 
+ ******************************/
+ 
+//=======================================================
+//=======================================================
+
+#include <stdlib.h>
+#include <string.h>
+
+//=======================================================
+//=======================================================
+
+#include "FrameBuffer.hh"
+
+//=======================================================
+//=======================================================
+
+#define abs(a)	(a>0?(a):-(a))
+
+//=======================================================
+//=======================================================
+
+// Array storing the font
+const unsigned char FrameBuffer::font_5x8[] = 
+{
+	0x00, 0x00, 0x00, 0x00, 0x00, // (space)
+	0x00, 0x00, 0x5F, 0x00, 0x00, // !
+	0x00, 0x07, 0x00, 0x07, 0x00, // "
+	0x14, 0x7F, 0x14, 0x7F, 0x14, // #
+	0x24, 0x2A, 0x7F, 0x2A, 0x12, // $
+	0x23, 0x13, 0x08, 0x64, 0x62, // %
+	0x36, 0x49, 0x55, 0x22, 0x50, // &
+	0x00, 0x05, 0x03, 0x00, 0x00, // '
+	0x00, 0x1C, 0x22, 0x41, 0x00, // (
+	0x00, 0x41, 0x22, 0x1C, 0x00, // )
+	0x08, 0x2A, 0x1C, 0x2A, 0x08, // *
+	0x08, 0x08, 0x3E, 0x08, 0x08, // +
+	0x00, 0x50, 0x30, 0x00, 0x00, // ,
+	0x08, 0x08, 0x08, 0x08, 0x08, // -
+	0x00, 0x30, 0x30, 0x00, 0x00, // .
+	0x20, 0x10, 0x08, 0x04, 0x02, // /
+	0x3E, 0x51, 0x49, 0x45, 0x3E, // 0
+	0x00, 0x42, 0x7F, 0x40, 0x00, // 1
+	0x42, 0x61, 0x51, 0x49, 0x46, // 2
+	0x21, 0x41, 0x45, 0x4B, 0x31, // 3
+	0x18, 0x14, 0x12, 0x7F, 0x10, // 4
+	0x27, 0x45, 0x45, 0x45, 0x39, // 5
+	0x3C, 0x4A, 0x49, 0x49, 0x30, // 6
+	0x01, 0x71, 0x09, 0x05, 0x03, // 7
+	0x36, 0x49, 0x49, 0x49, 0x36, // 8
+	0x06, 0x49, 0x49, 0x29, 0x1E, // 9
+	0x00, 0x36, 0x36, 0x00, 0x00, // :
+	0x00, 0x56, 0x36, 0x00, 0x00, // ;
+	0x00, 0x08, 0x14, 0x22, 0x41, // <
+	0x14, 0x14, 0x14, 0x14, 0x14, // =
+	0x41, 0x22, 0x14, 0x08, 0x00, // >
+	0x02, 0x01, 0x51, 0x09, 0x06, // ?
+	0x32, 0x49, 0x79, 0x41, 0x3E, // @
+	0x7E, 0x11, 0x11, 0x11, 0x7E, // A
+	0x7F, 0x49, 0x49, 0x49, 0x36, // B
+	0x3E, 0x41, 0x41, 0x41, 0x22, // C
+	0x7F, 0x41, 0x41, 0x22, 0x1C, // D
+	0x7F, 0x49, 0x49, 0x49, 0x41, // E
+	0x7F, 0x09, 0x09, 0x01, 0x01, // F
+	0x3E, 0x41, 0x41, 0x51, 0x32, // G
+	0x7F, 0x08, 0x08, 0x08, 0x7F, // H
+	0x00, 0x41, 0x7F, 0x41, 0x00, // I
+	0x20, 0x40, 0x41, 0x3F, 0x01, // J
+	0x7F, 0x08, 0x14, 0x22, 0x41, // K
+	0x7F, 0x40, 0x40, 0x40, 0x40, // L
+	0x7F, 0x02, 0x04, 0x02, 0x7F, // M
+	0x7F, 0x04, 0x08, 0x10, 0x7F, // N
+	0x3E, 0x41, 0x41, 0x41, 0x3E, // O
+	0x7F, 0x09, 0x09, 0x09, 0x06, // P
+	0x3E, 0x41, 0x51, 0x21, 0x5E, // Q
+	0x7F, 0x09, 0x19, 0x29, 0x46, // R
+	0x46, 0x49, 0x49, 0x49, 0x31, // S
+	0x01, 0x01, 0x7F, 0x01, 0x01, // T
+	0x3F, 0x40, 0x40, 0x40, 0x3F, // U
+	0x1F, 0x20, 0x40, 0x20, 0x1F, // V
+	0x7F, 0x20, 0x18, 0x20, 0x7F, // W
+	0x63, 0x14, 0x08, 0x14, 0x63, // X
+	0x03, 0x04, 0x78, 0x04, 0x03, // Y
+	0x61, 0x51, 0x49, 0x45, 0x43, // Z
+	0x00, 0x00, 0x7F, 0x41, 0x41, // [
+	0x02, 0x04, 0x08, 0x10, 0x20, // "\"
+	0x41, 0x41, 0x7F, 0x00, 0x00, // ]
+	0x04, 0x02, 0x01, 0x02, 0x04, // ^
+	0x40, 0x40, 0x40, 0x40, 0x40, // _
+	0x00, 0x01, 0x02, 0x04, 0x00, // `
+	0x20, 0x54, 0x54, 0x54, 0x78, // a
+	0x7F, 0x48, 0x44, 0x44, 0x38, // b
+	0x38, 0x44, 0x44, 0x44, 0x20, // c
+	0x38, 0x44, 0x44, 0x48, 0x7F, // d
+	0x38, 0x54, 0x54, 0x54, 0x18, // e
+	0x08, 0x7E, 0x09, 0x01, 0x02, // f
+	0x08, 0x14, 0x54, 0x54, 0x3C, // g
+	0x7F, 0x08, 0x04, 0x04, 0x78, // h
+	0x00, 0x44, 0x7D, 0x40, 0x00, // i
+	0x20, 0x40, 0x44, 0x3D, 0x00, // j
+	0x00, 0x7F, 0x10, 0x28, 0x44, // k
+	0x00, 0x41, 0x7F, 0x40, 0x00, // l
+	0x7C, 0x04, 0x18, 0x04, 0x78, // m
+	0x7C, 0x08, 0x04, 0x04, 0x78, // n
+	0x38, 0x44, 0x44, 0x44, 0x38, // o
+	0x7C, 0x14, 0x14, 0x14, 0x08, // p
+	0x08, 0x14, 0x14, 0x18, 0x7C, // q
+	0x7C, 0x08, 0x04, 0x04, 0x08, // r
+	0x48, 0x54, 0x54, 0x54, 0x20, // s
+	0x04, 0x3F, 0x44, 0x40, 0x20, // t
+	0x3C, 0x40, 0x40, 0x20, 0x7C, // u
+	0x1C, 0x20, 0x40, 0x20, 0x1C, // v
+	0x3C, 0x40, 0x30, 0x40, 0x3C, // w
+	0x44, 0x28, 0x10, 0x28, 0x44, // x
+	0x0C, 0x50, 0x50, 0x50, 0x3C, // y
+	0x44, 0x64, 0x54, 0x4C, 0x44, // z
+	0x00, 0x08, 0x36, 0x41, 0x00, // {
+	0x00, 0x00, 0x7F, 0x00, 0x00, // |
+	0x00, 0x41, 0x36, 0x08, 0x00, // }
+	0x08, 0x08, 0x2A, 0x1C, 0x08, // ->
+	0x08, 0x1C, 0x2A, 0x08, 0x08 // <-
+};
+
+//=======================================================
+//=======================================================
+
+FrameBuffer::FrameBuffer( int _width, int _height )
+{
+	m_buffer = new unsigned char[_width*_height*3];
+	m_width = _width;
+	m_height = _height;
+}
+
+//=======================================================
+//=======================================================
+
+FrameBuffer::~FrameBuffer()
+{
+	if (m_buffer)
+		delete [] m_buffer;
+	m_width = 0;
+	m_height = 0;
+}
+
+//=======================================================
+//=======================================================
+
+// Clear Screen
+void FrameBuffer::clear()
+{
+	memset( m_buffer, 0, m_width*m_height*3 );
+}
+
+//=======================================================
+//=======================================================
+
+// Write a single pixel
+void FrameBuffer::setPixel( unsigned char _x, unsigned char _y, unsigned char _r, unsigned char _g, unsigned char _b )
+{
+	if (_x>m_width || _y>m_height)
+		return;
+
+	m_buffer[3*(_y*m_width+_x)+0] = _r;
+	m_buffer[3*(_y*m_width+_x)+1] = _g;
+	m_buffer[3*(_y*m_width+_x)+2] = _b;
+}
+
+//=======================================================
+//=======================================================
+
+// Fill a box on screen
+void FrameBuffer::fillBox( unsigned char _x1, unsigned char _y1,
+			unsigned char _x2, unsigned char _y2,
+			unsigned char _r, unsigned char _g, unsigned char _b )
+{
+	int xdir = 1;
+	int ydir = 1;
+	if (_x2 < _x1) xdir=-1;
+	if (_y2 < _y1) ydir=-1;
+	for (int x=_x1;x!=_x2;x+=xdir)
+	{
+		for (int y=_y1;y!=_y2;y+=ydir)
+		{
+			m_buffer[3*(y*m_width+x)+0] = _r;
+			m_buffer[3*(y*m_width+x)+1] = _g;
+			m_buffer[3*(y*m_width+x)+2] = _b;
+		}
+	}
+}
+
+//=======================================================
+//=======================================================
+
+// Draw line
+void FrameBuffer::drawLine( unsigned char _x0, unsigned char _y0,
+			unsigned char _x1, unsigned char _y1, 
+			unsigned char _r, unsigned char _g, unsigned char _b )
+{
+	int dx = abs(_x1 - _x0);
+	int dy = abs(_y1 - _y0);
+	int sx=1;
+	int sy=1;
+	if (_x0>_x1) sx=-1;
+	if (_y0>_y1) sy=-1;
+	int err = dx-dy;
+
+	for(;;)
+	{
+		setPixel(_x0,_y0,_r,_g,_b);
+		if (_x0==_x1 && _y0==_y1)
+			return;
+		int err2 = 2*err;
+		if (err2 > -dy)
+		{
+			err = err - dy;
+			_x0 = _x0 + sx;
+		}
+		if (err2 < dx)
+		{
+			err = err + dx;
+			_y0 = _y0 + sy;
+		}
+	}
+}
+
+//=======================================================
+//=======================================================
+
+// Draw Polygon
+void FrameBuffer::drawPolygon( unsigned char _x0, unsigned char _y0,
+			       unsigned char _x1, unsigned char _y1,
+			       unsigned char _x2, unsigned char _y2,
+			       unsigned char _x3, unsigned char _y3,
+			       unsigned char _r, unsigned char _g, unsigned char _b )
+{
+	int rl[m_height*2];
+	for (int i=0;i<m_height;++i)
+	{
+		rl[2*i+0] = m_width+1;
+		rl[2*i+1] = -1;
+	}
+
+	rasterLine( _x0, _y0, _x1, _y1, rl );
+	rasterLine( _x1, _y1, _x2, _y2, rl );
+	rasterLine( _x2, _y2, _x3, _y3, rl );
+	rasterLine( _x3, _y3, _x0, _y0, rl );
+
+	for (int i=0;i<m_height;++i)
+	{
+		if ( rl[2*i+1] > rl[2*i+0] )
+		{
+			for( int j=rl[2*i+0]; j<=rl[2*i+1]; ++j )
+				setPixel( j, i, _r, _g, _b );
+		}
+	}
+}
+
+//=======================================================
+//=======================================================
+
+// Raster a line
+void FrameBuffer::rasterLine( int x0, int y0, int x1, int y1, int *rl )
+{
+	// Calculate deltas
+	int dx = abs(x1 - x0);
+	int dy = abs(y1 - y0);
+	int err = dx-dy;
+
+	// Calculate directions
+	int sx = 1;
+	int sy = 1;
+	if (x0>x1) sx=-1;
+	if (y0>y1) sy=-1;
+
+	// Loop on the segment
+	for(;;)
+	{
+		if (y0>=0 && y0<m_height)
+		{
+			if (x0 < rl[2*y0+0])
+				rl[2*y0+0] = x0 >= 0 ? x0 : 0;
+			if (x0 > rl[2*y0+1])
+				rl[2*y0+1] = x0 < m_height ? x0 : m_height-1;
+		}
+
+		// Did we reach the end ?
+		if (x0==x1 && y0==y1)
+			return;
+
+		int err2 = 2*err;
+		if (err2 > -dy)
+		{
+			err -= dy;
+			x0 += sx;
+		}
+		if (err2 < dx)
+		{
+			err += dx;
+			y0 += sy;
+		}
+	}
+}
+
+//=======================================================
+//=======================================================
+
+// Write a string to screen
+void FrameBuffer::print( unsigned char _x,
+			   unsigned char _y,
+			   const char * _string,
+			   unsigned char _r,
+			   unsigned char _g,
+			   unsigned char _b)
+{
+	while( *_string )
+	{
+		printChar( _x, _y, *_string, _r,_g,_b );
+		_x += 6;
+		_string++;
+	};
+}
+
+//=======================================================
+//=======================================================
+
+// Write a single character
+void FrameBuffer::printChar(
+		unsigned char _x, 
+		unsigned char _y,
+		char _c,
+		unsigned char _r,
+		unsigned char _g,
+		unsigned char _b )
+{
+	// Calculate index in font array
+	int index = _c - ' ';
+	if (index<0 || index>96)
+		index = 0;
+
+	// Get pointer to charachter data
+	unsigned char * char_data = (unsigned char *)(font_5x8 + index*5);
+
+	// Write the character
+	for (int j=0;j<8;++j)
+	{
+		unsigned char mask = 0x01 << j;
+		for (int i=0;i<5;++i)
+		{
+			if (char_data[i] & mask)
+				setPixel( _x+i, _y+j, _r, _g, _b );
+		}
+	}
+}
+
+//=======================================================
+//=======================================================
+
+

@@ -4,9 +4,9 @@
 
 CXX=g++
 
-CFLAGS=-Wall -c
+CFLAGS=-Wall -c -O3
 
-LDFLAGS=-Wall
+LDFLAGS=-Wall -O3
 
 TARGETS = Beagle_GPIO.o	\
 	  Beagle_GPIO_test \
@@ -15,6 +15,7 @@ TARGETS = Beagle_GPIO.o	\
 	  Beagle_GPIO_KS0108.o \
 	  Beagle_GPIO_KS0108_test \
 	  Beagle_GPIO_Nokia6100.o \
+	  FrameBuffer.o \
 	  Beagle_GPIO_Nokia6100_test \
 	  Beagle_GPIO_Nokia6100_test_3d
 
@@ -36,6 +37,10 @@ Beagle_GPIO_Nokia6100.o: Beagle_GPIO_Nokia6100.cc Beagle_GPIO_Nokia6100.hh
 	@echo Compiling $< to $@
 	@$(CXX) $(CFLAGS) Beagle_GPIO_Nokia6100.cc -o $@
 
+FrameBuffer.o: FrameBuffer.cc FrameBuffer.hh
+	@echo Compiling $< to $@
+	@$(CXX) $(CFLAGS) FrameBuffer.cc -o $@
+
 Beagle_GPIO_test: Beagle_GPIO_test.cc Beagle_GPIO.o
 	@echo Compiling $< to $@
 	@$(CXX) $(LDLAGS) Beagle_GPIO_test.cc Beagle_GPIO.o -o Beagle_GPIO_test
@@ -52,9 +57,9 @@ Beagle_GPIO_Nokia6100_test: Beagle_GPIO_Nokia6100_test.cc Beagle_GPIO.o Beagle_G
 	@echo Compiling $< to $@
 	@$(CXX) $(LDLAGS) Beagle_GPIO_Nokia6100_test.cc Beagle_GPIO.o Beagle_GPIO_Nokia6100.o -o $@
 
-Beagle_GPIO_Nokia6100_test_3d: Beagle_GPIO_Nokia6100_test_3d.cc Beagle_GPIO.o Beagle_GPIO_Nokia6100.o
+Beagle_GPIO_Nokia6100_test_3d: Beagle_GPIO_Nokia6100_test_3d.cc Beagle_GPIO.o Beagle_GPIO_Nokia6100.o FrameBuffer.o
 	@echo Compiling $< to $@
-	@$(CXX) $(LDLAGS) Beagle_GPIO_Nokia6100_test_3d.cc Beagle_GPIO.o Beagle_GPIO_Nokia6100.o -o $@
+	@$(CXX) $(LDLAGS) Beagle_GPIO_Nokia6100_test_3d.cc Beagle_GPIO.o Beagle_GPIO_Nokia6100.o FrameBuffer.o -o $@
 
 clean:
 	@rm -rf *~ *.o $(TARGETS) 

@@ -32,9 +32,9 @@ int main()
 	lcd.fillBox( 40, 40, 75, 75, 0x00, 0xFF, 0x00 );
 	lcd.fillBox( 70, 70, 100, 100, 0x00, 0x00, 0xFF );
 
-	lcd.write( 33, 25, "Beagle_GPIO", 0xFF, 0xFF, 0xFF );
-	lcd.write( 35, 35, "Nokia 6100", 0xFF, 0xFF, 0xFF );
-	lcd.write( 57, 45, "LCD", 0xFF, 0xFF, 0xFF );
+	lcd.print( 33, 25, "Beagle_GPIO", 0xFF, 0xFF, 0xFF );
+	lcd.print( 35, 35, "Nokia 6100", 0xFF, 0xFF, 0xFF );
+	lcd.print( 57, 45, "LCD", 0xFF, 0xFF, 0xFF );
 #else
 	// SPI Interface
 	Beagle_GPIO_Nokia6100 lcd( & gpio, Beagle_GPIO::P8_42 );
@@ -46,7 +46,7 @@ int main()
 		lcd.fillBox(0,0,132,132,0xFF,0,0);
 		//lcd.fillBox(0,0,132,132,0,0xFF,0);
 		//lcd.fillBox(0,0,132,132,0,0,0xFF);
-		lcd.write( 33, i, "Beagle_GPIO", 0xFF, 0xFF, 0xFF );
+		lcd.print( 33, i, "Beagle_GPIO", 0xFF, 0xFF, 0xFF );
 	}
 #endif
 	sleep(1);
