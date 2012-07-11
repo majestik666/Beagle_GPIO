@@ -354,14 +354,6 @@ void Beagle_GPIO::openSPI( unsigned char _mode,
 	GPIO_PRINT( "SPI Max Speed : " << std::dec << m_spi_speed );
 	GPIO_PRINT( "SPI Delay : " << std::dec << m_spi_delay );
 	GPIO_PRINT( "SPI Opened" );
-
-	GPIO_PRINT( "SPI Testing...");
-	unsigned char b[4];
-	b[0] = 0xFF;
-	b[1] = 0xF1;
-	b[2] = 0xAA;
-	b[3] = 0x99;
-	sendSPIBuffer( (unsigned long)(b), 4 );
 }
  
 //=======================================================
@@ -395,22 +387,11 @@ void Beagle_GPIO::sendSPIBuffer( unsigned long _buffer, int _size )
        	m_spi_ioc_tr.speed_hz = m_spi_speed;
        	m_spi_ioc_tr.bits_per_word = m_spi_bits;
 
-#if 0
-	unsigned char * c = (unsigned char *)(_buffer);
-	for (int i=0;i<_size;++i)
-		std::cout << "0x" << std::hex << (int)(c[i]) << " ";
-	std::cout << "\n";
-#endif	
 	if ( ioctl( m_spi_fd, SPI_IOC_MESSAGE(1), &m_spi_ioc_tr ) < 1 )
 	{
 		GPIO_ERROR( "Cannot send SPI Buffer, size=" << std::dec << _size );
 		return;
 	}
-#if 0
-	for (int i=0;i<_size;++i)
-		std::cout << "0x" << std::hex << (int)(m_spi_buffer_rx[i]) << " ";
-	std::cout << "\n";
-#endif
 }
  
 //=======================================================

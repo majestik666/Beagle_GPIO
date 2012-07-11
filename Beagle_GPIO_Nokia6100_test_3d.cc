@@ -229,17 +229,6 @@ int main()
 			pp[2*j+1] = (int)(WIDTH/2.0f + fac*tp[3*j+1] + 0.5 );
 		}
 
-		/*
-		for (int j=0;j<nbEdges;++j)
-		{
-			int p1 = edges[2*j+0];
-			int p2 = edges[2*j+1];
-
-			frameBuffer.drawLine( pp[2*p1+0],pp[2*p1+1], pp[2*p2+0],pp[2*p2+1], 0xFF,0,0 );
-			drawLine( pp[2*p1+0],pp[2*p1+1], pp[2*p2+0],pp[2*p2+1], 0xFF,0,0 );
-		}
-		*/
-
 		drawPolygons( tp, pp );
 
 		frameBuffer.print(11,91,"BeagleBone",0,0,0);
