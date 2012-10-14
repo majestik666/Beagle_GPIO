@@ -614,7 +614,10 @@ void Beagle_GPIO_Nokia6100::writeBuffer( unsigned char *buffer, unsigned char _x
 	// Set the window
 	setWindow( _x, _y, _x+_w-1, _y+_h-1 );
 
-	addSPICommand( kRAMWR );
+	if ( !m_use_SPI )
+		sendCommand( kRAMWR );
+	else
+		addSPICommand( kRAMWR );
 
 	unsigned char b1,b2,b3;
 	int total_words = (_w*_h+1)/2;
@@ -624,15 +627,21 @@ void Beagle_GPIO_Nokia6100::writeBuffer( unsigned char *buffer, unsigned char _x
 		b1 = (buffer[idx+0] << 4) + (buffer[idx+1] >> 4);	// r1,g1
 		b2 = (buffer[idx+2] << 4) + (buffer[idx+3] >> 4);	// b1,r2
 		b3 = (buffer[idx+4] << 4) + (buffer[idx+5] >> 4);	// g2,b2
-		addSPIData(b1);
-		addSPIData(b2);
-		addSPIData(b3);
-		if (m_spi_buffer_index > 150)
+		if ( !m_use_SPI ) {
+			sendData(b1);
+			sendData(b2);
+			sendData(b3);
+		}else{
+			addSPIData(b1);
+			addSPIData(b2);
+			addSPIData(b3);
+		}
+		if (m_use_SPI && m_spi_buffer_index > 150)
 			sendSPIBuffer();
 	}
 
 	// Send the reminder
-	sendSPIBuffer();
+	if (m_use_SPI) sendSPIBuffer();
 }
 
 //=======================================================
