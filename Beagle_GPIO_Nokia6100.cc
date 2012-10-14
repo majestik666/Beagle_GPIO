@@ -292,7 +292,7 @@ void Beagle_GPIO_Nokia6100::initScreen()
 		sendData( 0x02 );
 
 		sendCommand( kVOLCTR );
-		sendData( 0x10 );
+		sendData( 0x20 );
 		sendData( 0x03 );
 
 		sendCommand( kNOP );
