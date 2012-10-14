@@ -543,7 +543,7 @@ void Beagle_GPIO_Nokia6100::printChar( unsigned char _x,
 	unsigned char * char_data = (unsigned char *)(font_5x8 + index*5);
 
 	// Set the write window to the character size
-	setWindow( _x,_y, _x+4,_y+8 );
+	setWindow( _x,_y, _x+5,_y+8 );
 	if ( !m_use_SPI )
 	{
 		sendCommand( kRAMWR );
