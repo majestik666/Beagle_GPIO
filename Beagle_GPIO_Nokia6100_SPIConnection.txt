@@ -1,0 +1,7 @@
+Nokia6100 LCD Connections for BeagleBone (Hardware SPI Configuration)
+(As pins show, it uses SPI1 by default)
+
+CS			P9.28
+CLOCK		P9.31
+DATA		P9.30
+RESET		P8.42
